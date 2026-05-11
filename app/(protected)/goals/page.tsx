@@ -209,29 +209,25 @@ export default function GoalsPage() {
       {/* Header */}
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-foreground tracking-tight">Goals</h1>
-          <p className="text-foreground/60 text-sm">System objectives and progress tracking</p>
+          <h1 className="text-2xl font-bold text-white">Goals</h1>
+          <p className="text-gray-400 text-sm">Track your objectives and progress</p>
         </div>
         <Button
           onClick={() => setShowModal(true)}
-          className="futuristic-button h-10 px-6 font-bold uppercase tracking-wider text-[10px]"
+          className="bg-cyan-500 hover:bg-cyan-600 text-white"
         >
           <Plus size={16} className="mr-2" />
-          Initialize New Goal
+          Add Goal
         </Button>
       </motion.div>
 
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl text-sm font-medium flex items-center gap-3 animate-fade-in">
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          System Error: {error}
-        </div>
+        <div className="p-4 bg-red-500/10 border border-red-500/50 text-red-400 rounded-lg">{error}</div>
       )}
 
       {loading ? (
         <div className="flex flex-col items-center justify-center p-20 gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-500 shadow-lg shadow-cyan-500/20"></div>
-          <p className="text-xs font-bold text-foreground/40 uppercase tracking-widest">Retrieving Core Data...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
         </div>
       ) : (
         <motion.div
@@ -242,26 +238,26 @@ export default function GoalsPage() {
             <motion.div
               key={goal.id}
               variants={itemVariants}
-              className="glass p-6 flex flex-col justify-between group h-full rounded-2xl border border-white/5"
+              className="glass rounded-xl p-6 border border-cyan-500/20"
             >
               <div>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-foreground/5 border border-border flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/10 group-hover:border-cyan-500/20 transition-all duration-500">
+                    <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
                       <Target className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-foreground group-hover:text-cyan-400 transition-colors">
+                      <h3 className="text-base font-semibold text-white">
                         {goal.title}
                       </h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-widest border ${goal.priority === 'high' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                          goal.priority === 'medium' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' :
-                            'bg-green-500/10 border-green-500/20 text-green-400'
+                        <span className={`text-xs px-2 py-0.5 rounded ${goal.priority === 'high' ? 'bg-red-500/20 text-red-400' :
+                          goal.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-green-500/20 text-green-400'
                           }`}>
                           {goal.priority}
                         </span>
-                        <span className="text-[9px] font-bold text-foreground/40 uppercase tracking-widest">
+                        <span className="text-xs text-gray-500">
                           {goal.type}
                         </span>
                       </div>
@@ -270,45 +266,37 @@ export default function GoalsPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-8 h-8 rounded-lg hover:bg-red-500/10 text-gray-600 hover:text-red-400 transition-all"
+                    className="w-8 h-8 rounded-lg hover:bg-red-500/10 text-gray-600 hover:text-red-400"
                     onClick={(e) => handleDeleteGoal(goal.id, e)}
                   >
                     <Trash2 size={16} />
                   </Button>
                 </div>
-                <p className="text-xs text-foreground/60 leading-relaxed mb-6 line-clamp-2">
+                <p className="text-sm text-gray-400 mb-4">
                   {goal.description}
                 </p>
               </div>
 
-              <div className="space-y-6">
-                {/* Progress Section */}
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-foreground/40 uppercase tracking-widest">Progress Level</span>
+                    <span className="text-xs text-gray-500">Progress</span>
                     <span className="text-xs font-bold text-cyan-400">{goal.progress}%</span>
                   </div>
-                  <div className="h-1.5 bg-foreground/5 rounded-full overflow-hidden">
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${goal.progress}%` }}
                       transition={{ duration: 1, ease: "easeOut" }}
-                      className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 shadow-[0_0_10px_rgba(0,229,255,0.3)]"
+                      className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
                     />
                   </div>
                 </div>
 
-                {/* Timeline */}
-                <div className="flex items-center justify-between text-[9px] font-bold text-foreground/40 uppercase tracking-widest pt-3 border-t border-border">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={12} className="text-foreground/30" />
-                    <span>{new Date(goal.startDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                  </div>
-                  <ArrowRight size={12} className="text-foreground/20" />
-                  <div className="flex items-center gap-2">
-                    <Flag size={12} className="text-foreground/30" />
-                    <span className="text-foreground">{new Date(goal.endDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                  </div>
+                <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-700">
+                  <span>{new Date(goal.startDate).toLocaleDateString()}</span>
+                  <ArrowRight size={12} className="text-gray-600" />
+                  <span>{new Date(goal.endDate).toLocaleDateString()}</span>
                 </div>
               </div>
             </motion.div>
@@ -331,84 +319,79 @@ export default function GoalsPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass-heavy rounded-[28px] w-full max-w-lg overflow-hidden relative z-10 shadow-2xl"
+              className="glass rounded-xl p-6 border border-cyan-500/20 w-full max-w-md"
             >
-              <div className="p-8 border-b border-border flex items-center justify-between bg-foreground/2">
-                <h2 className="text-xl font-bold text-foreground tracking-tight">Initialize New Goal</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-foreground/5 rounded-xl transition-colors">
-                  <X size={20} className="text-foreground/40" />
-                </button>
-              </div>
-              <form onSubmit={handleCreateGoal} className="p-8 space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest ml-1">Title</label>
+              <h2 className="text-xl font-bold mb-4 text-white">Add Goal</h2>
+              <form onSubmit={handleCreateGoal} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Title</label>
                   <input
                     required
                     value={newGoal.title}
                     onChange={e => setNewGoal({ ...newGoal, title: e.target.value })}
-                    className="futuristic-input w-full rounded-xl px-5 py-4 text-sm"
-                    placeholder="E.g., Complete System Migration"
+                    className="w-full bg-[rgba(26,26,46,0.8)] border border-cyan-500/30 rounded p-2 text-white"
+                    placeholder="E.g., Complete project"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest ml-1">Strategy Description</label>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Description</label>
                   <textarea
                     value={newGoal.description}
                     onChange={e => setNewGoal({ ...newGoal, description: e.target.value })}
-                    className="futuristic-input w-full rounded-xl px-5 py-4 text-sm h-28 resize-none"
-                    placeholder="Outline your strategic objectives..."
+                    className="w-full bg-[rgba(26,26,46,0.8)] border border-cyan-500/30 rounded p-2 text-white h-20 resize-none"
+                    placeholder="Describe your goal..."
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest ml-1">Classification</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Type</label>
                     <select
                       value={newGoal.type}
                       onChange={e => setNewGoal({ ...newGoal, type: e.target.value })}
-                      className="futuristic-input w-full rounded-xl px-5 py-4 text-sm appearance-none cursor-pointer"
+                      className="w-full bg-[rgba(26,26,46,0.8)] border border-cyan-500/30 rounded p-2 text-white"
                     >
                       <option value="weekly">Weekly</option>
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest ml-1">Priority Level</label>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Priority</label>
                     <select
                       value={newGoal.priority}
                       onChange={e => setNewGoal({ ...newGoal, priority: e.target.value })}
-                      className="futuristic-input w-full rounded-xl px-5 py-4 text-sm appearance-none cursor-pointer"
+                      className="w-full bg-[rgba(26,26,46,0.8)] border border-cyan-500/30 rounded p-2 text-white"
                     >
-                      <option value="low">Low Intensity</option>
-                      <option value="medium">Medium Intensity</option>
-                      <option value="high">Critical / High</option>
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
                     </select>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest ml-1">Target Completion Date</label>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Target Date</label>
                   <input
                     type="date"
                     required
                     value={newGoal.endDate}
                     onChange={e => setNewGoal({ ...newGoal, endDate: e.target.value })}
-                    className="futuristic-input w-full rounded-xl px-5 py-4 text-sm cursor-pointer"
+                    className="w-full bg-[rgba(26,26,46,0.8)] border border-cyan-500/30 rounded p-2 text-white"
                   />
                 </div>
-                <div className="flex gap-4 pt-6">
+                <div className="flex gap-4 pt-4">
                   <Button
                     type="button"
                     variant="ghost"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 h-12 text-xs font-bold uppercase tracking-wider text-foreground/40 hover:text-foreground"
+                    className="flex-1 border border-cyan-500/30 hover:bg-cyan-500/10 text-white"
                   >
-                    Abort
+                    Cancel
                   </Button>
                   <Button
                     type="submit"
-                    className="futuristic-button flex-1 h-12 text-xs font-bold uppercase tracking-wider"
+                    className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
                   >
-                    Confirm & Start
+                    Add Goal
                   </Button>
                 </div>
               </form>

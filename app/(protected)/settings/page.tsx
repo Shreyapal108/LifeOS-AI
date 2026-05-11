@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Settings, Bell, Moon, Shield, Database, LogOut } from 'lucide-react'
+import { Settings, Moon, Shield, Database, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -28,55 +28,16 @@ const itemVariants = {
   },
 }
 
-interface SettingToggle {
-  id: string
-  label: string
-  description: string
-  enabled: boolean
-  icon: React.ReactNode
-}
-
 export default function SettingsPage() {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  
-  const [settings, setSettings] = useState<SettingToggle[]>([
-    {
-      id: 'darkMode',
-      label: 'Dark Mode',
-      description: 'Use dark theme for the interface',
-      enabled: mounted ? theme === 'dark' : true,
-      icon: <Moon className="w-5 h-5" />,
-    },
-  ])
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  useEffect(() => {
-    if (mounted) {
-      setSettings(prev => prev.map(s => 
-        s.id === 'darkMode' ? { ...s, enabled: theme === 'dark' } : s
-      ))
-    }
-  }, [theme, mounted])
-
-  const toggleSetting = (id: string) => {
-    if (id === 'darkMode') {
-      // Toggle the actual theme
-      const newTheme = theme === 'dark' ? 'light' : 'dark'
-      setTheme(newTheme)
-    } else {
-      // Toggle other settings normally
-      setSettings(
-        settings.map((s) =>
-          s.id === id ? { ...s, enabled: !s.enabled } : s
-        )
-      )
-    }
-  }
+  if (!mounted) return null
 
   const handleExport = async () => {
     try {
@@ -250,78 +211,75 @@ Security:
     >
       {/* Header */}
       <motion.div variants={itemVariants}>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight transition-colors duration-300">Settings</h1>
-        <p className="text-muted-foreground text-lg transition-colors duration-300">System configuration and user preferences</p>
+        <h1 className="text-2xl font-bold text-white">Settings</h1>
+        <p className="text-gray-400 text-lg">Manage your preferences</p>
       </motion.div>
 
       {/* Preferences Section */}
       <motion.div variants={itemVariants} className="space-y-6">
-        <h2 className="text-xl font-bold text-foreground tracking-tight transition-colors duration-300">Core Preferences</h2>
+        <h2 className="text-xl font-bold text-white">Preferences</h2>
         <div className="grid grid-cols-1 gap-4">
-          {settings.map((setting) => (
-            <motion.div
-              key={setting.id}
-              variants={itemVariants}
-              className="glass p-6 flex items-center justify-between group transition-all duration-500 hover:border-primary/20 transition-colors duration-300"
-            >
-              <div className="flex items-center gap-6">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-all duration-500">
-                  {setting.icon}
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-foreground mb-1 transition-colors duration-300">{setting.label}</h3>
-                  <p className="text-xs text-muted-foreground font-medium transition-colors duration-300">{setting.description}</p>
-                </div>
+          <motion.div
+            variants={itemVariants}
+            className="glass rounded-xl border border-cyan-500/20 p-6 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
+                <Moon className="w-5 h-5" />
               </div>
+              <div>
+                <h3 className="text-base font-semibold text-white">Dark Mode</h3>
+                <p className="text-xs text-gray-500">Use dark theme</p>
+              </div>
+            </div>
 
-              <button
-                onClick={() => toggleSetting(setting.id)}
-                className={`w-14 h-7 rounded-full transition-all duration-500 p-1 flex items-center ${
-                  setting.enabled ? 'bg-primary shadow-[0_0_15px_color-mix(in_srgb,var(--primary)_40%,transparent)]' : 'bg-muted'
-                }`}
-              >
-                <motion.div
-                  animate={{ x: setting.enabled ? 28 : 0 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  className="w-5 h-5 rounded-full bg-foreground shadow-lg transition-colors duration-300"
-                />
-              </button>
-            </motion.div>
-          ))}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className={`w-12 h-6 rounded-full transition-all duration-300 p-1 flex items-center ${
+                theme === 'dark' ? 'bg-cyan-500' : 'bg-gray-600'
+              }`}
+            >
+              <motion.div
+                animate={{ x: theme === 'dark' ? 24 : 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                className="w-4 h-4 rounded-full bg-white"
+              />
+            </button>
+          </motion.div>
         </div>
       </motion.div>
 
       {/* Data & Privacy Section */}
       <motion.div variants={itemVariants} className="space-y-6">
-        <h2 className="text-xl font-bold text-foreground tracking-tight transition-colors duration-300">Intelligence & Security</h2>
-        <div className="glass p-8 space-y-8 transition-colors duration-300">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-8 border-b border-border transition-colors duration-300">
-            <div className="flex items-start gap-6">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent transition-colors duration-300">
+        <h2 className="text-xl font-bold text-white">Data & Privacy</h2>
+        <div className="glass rounded-xl border border-cyan-500/20 p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-700">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
                 <Database size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground mb-1 transition-colors duration-300">Knowledge Export</h3>
-                <p className="text-xs text-muted-foreground font-medium transition-colors duration-300">Generate a comprehensive audit of all stored behavioral data</p>
+                <h3 className="text-base font-semibold text-white">Export Data</h3>
+                <p className="text-xs text-gray-500">Download all your data</p>
               </div>
             </div>
-            <Button onClick={handleExport} className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 px-8 text-[10px] font-bold uppercase tracking-widest transition-all duration-300">
-              Export JSON
+            <Button onClick={handleExport} className="bg-cyan-500 hover:bg-cyan-600 text-white">
+              Export
             </Button>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="flex items-start gap-6">
-              <div className="w-10 h-10 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center text-success transition-colors duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400">
                 <Shield size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground mb-1 transition-colors duration-300">Privacy Protocol</h3>
-                <p className="text-xs text-muted-foreground font-medium transition-colors duration-300">Review our neural data handling and protection standards</p>
+                <h3 className="text-base font-semibold text-white">Privacy Policy</h3>
+                <p className="text-xs text-gray-500">Review our data handling</p>
               </div>
             </div>
-            <Button onClick={handleReadPolicy} variant="ghost" className="h-10 px-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-card/50 transition-colors duration-300">
-              Read Policy
+            <Button onClick={handleReadPolicy} variant="ghost" className="border border-cyan-500/30 hover:bg-cyan-500/10 text-white">
+              Read
             </Button>
           </div>
         </div>
@@ -329,32 +287,32 @@ Security:
 
       {/* Danger Zone */}
       <motion.div variants={itemVariants} className="space-y-6">
-        <h2 className="text-xl font-bold text-foreground tracking-tight transition-colors duration-300">Decommissioning</h2>
-        <div className="glass p-8 border-destructive/10 bg-destructive/5 space-y-6 transition-colors duration-300">
-          <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium leading-relaxed transition-colors duration-300">
-            Warning: The following actions will permanently terminate your account and erase all synchronized neural patterns. This procedure is irreversible.
+        <h2 className="text-xl font-bold text-white">Danger Zone</h2>
+        <div className="glass rounded-xl border border-red-500/20 p-6 space-y-4">
+          <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs leading-relaxed">
+            Warning: These actions are irreversible and will permanently delete your data.
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Button onClick={handleLogout} className="h-12 bg-destructive/10 hover:bg-destructive/20 border border-destructive/20 text-destructive text-[10px] font-bold uppercase tracking-widest flex items-center gap-3 transition-all duration-300">
+            <Button onClick={handleLogout} className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 flex items-center gap-2">
               <LogOut size={16} />
-              Terminate Session
+              Logout
             </Button>
-            <Button onClick={handlePurge} className="h-12 bg-transparent hover:bg-destructive/10 border border-destructive/10 text-destructive/60 hover:text-destructive text-[10px] font-bold uppercase tracking-widest transition-all duration-300">
-              Purge All Data
+            <Button onClick={handlePurge} className="bg-transparent hover:bg-red-500/10 border border-red-500/10 text-red-500/60 hover:text-red-500">
+              Delete All Data
             </Button>
           </div>
         </div>
       </motion.div>
 
       {/* System Info */}
-      <motion.div variants={itemVariants} className="glass p-8 text-center bg-gradient-to-br from-card/50 to-transparent transition-colors duration-300">
-        <div className="inline-block px-4 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-widest mb-4 transition-colors duration-300">
-          Stable Build v1.0.42
+      <motion.div variants={itemVariants} className="glass rounded-xl border border-cyan-500/20 p-6 text-center">
+        <div className="inline-block px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-xs font-bold text-cyan-400 mb-3">
+          v1.0.0
         </div>
-        <h3 className="text-xl font-bold text-foreground mb-2 transition-colors duration-300">LifeOS AI Operational</h3>
-        <p className="text-xs text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed transition-colors duration-300">
-          Powered by Next.js, Supabase real-time core, and OpenAI neural processing architectures.
+        <h3 className="text-lg font-bold text-white mb-2">LifeOS AI</h3>
+        <p className="text-xs text-gray-500 max-w-sm mx-auto">
+          Powered by Next.js and Supabase
         </p>
       </motion.div>
     </motion.div>

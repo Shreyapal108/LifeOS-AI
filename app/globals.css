@@ -4,43 +4,40 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Light theme - Premium Glassmorphism SaaS */
-  --background: #ffffff;
-  --background-secondary: #f8fafc;
-  --foreground: #1a1a1a;
-  --foreground-secondary: #64748b;
-  --card: rgba(255, 255, 255, 0.85);
-  --card-foreground: #1a1a1a;
-  --popover: rgba(255, 255, 255, 0.95);
-  --popover-foreground: #1a1a1a;
-  --primary: #0ea5e9;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0ea5e9;
-  --muted: #f8fafc;
-  --muted-foreground: #64748b;
-  --accent: #e0e7ff;
-  --accent-foreground: #1a1a1a;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.08);
-  --input: rgba(0, 0, 0, 0.05);
-  --ring: #0ea5e9;
-  --chart-1: #0ea5e9;
-  --chart-2: #8b5cf6;
-  --chart-3: #10b981;
-  --chart-4: #f59e0b;
-  --chart-5: #ef4444;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1a1a1a;
-  --sidebar-primary: #0ea5e9;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #1a1a1a;
-  --sidebar-border: rgba(0, 0, 0, 0.08);
-  --sidebar-ring: #0ea5e9;
+  /* Light theme defaults (rarely used) */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
@@ -126,127 +123,50 @@
 
 @layer base {
   * {
-    border-color: var(--border);
-    outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
-    transition: all 300ms ease-in-out;
+    @apply border-border outline-ring/50;
   }
   
   html {
-    background-color: var(--background);
-    color: var(--foreground);
-    transition: all 300ms ease-in-out;
+    @apply bg-[#030303];
   }
   
   body {
-    background-color: var(--background);
-    color: var(--foreground);
-    transition: all 300ms ease-in-out;
-  }
-  
-  /* Smooth theme transitions for all interactive elements */
-  button, a, input, textarea, select {
-    transition: all 300ms ease-in-out;
-  }
-  
-  /* Smooth transitions for background and text */
-  .bg-background, .bg-card, .bg-muted, .bg-sidebar {
-    transition: background-color 300ms ease-in-out;
-  }
-  
-  .text-foreground, .text-muted-foreground, .text-card-foreground {
-    transition: color 300ms ease-in-out;
-  }
-  
-  /* Smooth transitions for borders */
-  .border, .border-border, .border-input {
-    transition: border-color 300ms ease-in-out;
+    @apply bg-[#030303] text-foreground;
   }
 }
 
-/* Glassmorphism utilities - Theme Aware */
+/* Glassmorphism utilities */
 @layer components {
   .glass {
-    backdrop-filter: blur(20px);
-    transition: all 300ms ease-in-out;
-    background: color-mix(in srgb, var(--card) 85%, transparent);
-    border-color: var(--border);
-    box-shadow: 0 8px 32px 0 color-mix(in srgb, var(--background) 30%, transparent);
+    @apply backdrop-blur-[20px] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
   }
   
   .glass-light {
-    backdrop-filter: blur(10px);
-    transition: all 300ms ease-in-out;
-    background: color-mix(in srgb, var(--card) 70%, transparent);
-    border-color: color-mix(in srgb, var(--border) 50%, transparent);
-    box-shadow: 0 4px 16px 0 color-mix(in srgb, var(--background) 20%, transparent);
+    @apply backdrop-blur-[10px] bg-[rgba(255,255,255,0.01)] border border-[rgba(255,255,255,0.04)] shadow-[0_4px_16px_0_rgba(0,0,0,0.2)];
   }
   
   .glass-dark {
-    backdrop-filter: blur(30px);
-    transition: all 300ms ease-in-out;
-    background: color-mix(in srgb, var(--card) 90%, transparent);
-    border-color: color-mix(in srgb, var(--border) 80%, transparent);
-    box-shadow: 0 8px 32px 0 color-mix(in srgb, var(--background) 40%, transparent);
-  }
-  
-  .glass-premium {
-    backdrop-filter: blur(20px);
-    transition: all 300ms ease-in-out;
-    background: color-mix(in srgb, var(--card) 75%, transparent);
-    border-color: var(--border);
-    box-shadow: 0 12px 40px 0 color-mix(in srgb, var(--background) 25%, transparent);
-  }
-  
-  .glass-heavy {
-    backdrop-filter: blur(30px);
-    transition: all 300ms ease-in-out;
-    background: color-mix(in srgb, var(--card) 95%, transparent);
-    border-color: var(--border);
-    box-shadow: 0 16px 48px 0 color-mix(in srgb, var(--background) 35%, transparent);
+    @apply backdrop-blur-[30px] bg-[rgba(0,0,0,0.4)] border border-[rgba(255,255,255,0.1)] shadow-[0_8px_32px_0_rgba(0,0,0,0.5)];
   }
   
   .glow-cyan {
-    box-shadow: 0 0 20px color-mix(in srgb, var(--primary) 60%, transparent), 
-                0 0 40px color-mix(in srgb, var(--primary) 30%, transparent);
-    transition: all 300ms ease-in-out;
-  }
-  
-  .glow-cyan:hover {
-    box-shadow: 0 0 30px color-mix(in srgb, var(--primary) 80%, transparent), 
-                0 0 60px color-mix(in srgb, var(--primary) 40%, transparent);
+    @apply shadow-[0_0_20px_rgba(0,229,255,0.15)] hover:shadow-[0_0_30px_rgba(0,229,255,0.3)] transition-all;
   }
   
   .glow-magenta {
-    box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 60%, transparent), 
-                0 0 40px color-mix(in srgb, var(--accent) 30%, transparent);
-    transition: all 300ms ease-in-out;
-  }
-  
-  .glow-magenta:hover {
-    box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 80%, transparent), 
-                0 0 60px color-mix(in srgb, var(--accent) 40%, transparent);
+    @apply shadow-[0_0_20px_rgba(176,38,255,0.15)] hover:shadow-[0_0_30px_rgba(176,38,255,0.3)] transition-all;
   }
   
   .glow-success {
-    box-shadow: 0 0 20px color-mix(in srgb, var(--success) 60%, transparent), 
-                0 0 40px color-mix(in srgb, var(--success) 30%, transparent);
-    transition: all 300ms ease-in-out;
-  }
-  
-  .glow-success:hover {
-    box-shadow: 0 0 30px color-mix(in srgb, var(--success) 80%, transparent), 
-                0 0 60px color-mix(in srgb, var(--success) 40%, transparent);
+    @apply shadow-[0_0_20px_rgba(0,255,170,0.15)] hover:shadow-[0_0_30px_rgba(0,255,170,0.3)] transition-all;
   }
   
   .gradient-cyan-magenta {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--background) 50%, var(--accent) 100%);
+    @apply bg-gradient-to-r from-[#00e5ff] via-[#030303] to-[#b026ff];
   }
   
   .gradient-text-cyan {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    @apply bg-gradient-to-r from-[#00e5ff] to-[#b026ff] bg-clip-text text-transparent;
   }
 }
 
@@ -302,7 +222,6 @@
   }
 }
 
-/* Enhanced theme transitions and animations */
 @layer utilities {
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out;
@@ -322,18 +241,6 @@
   
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
-  }
-  
-  .theme-transition {
-    transition: all 300ms ease-in-out;
-  }
-  
-  .theme-transition-slow {
-    transition: all 500ms ease-in-out;
-  }
-  
-  .theme-transition-fast {
-    transition: all 200ms ease-in-out;
   }
   
   /* Hide scrollbar while maintaining scroll functionality */

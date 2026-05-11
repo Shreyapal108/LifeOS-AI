@@ -23,28 +23,28 @@ const stats: StatCard[] = [
     value: '5',
     subtitle: 'This month',
     icon: <Target className="w-6 h-6" />,
-    color: 'primary',
+    color: 'from-cyan-500 to-cyan-600',
   },
   {
     title: 'Habit Streak',
     value: '12',
     subtitle: 'Days consistent',
     icon: <Zap className="w-6 h-6" />,
-    color: 'success',
+    color: 'from-green-500 to-green-600',
   },
   {
     title: 'This Month Budget',
     value: '₹450',
     subtitle: 'of ₹1,000',
     icon: <IndianRupee className="w-6 h-6" />,
-    color: 'accent',
+    color: 'from-purple-500 to-purple-600',
   },
   {
     title: 'Productivity Score',
     value: '78%',
     subtitle: '+5% from last week',
     icon: <BarChart3 className="w-6 h-6" />,
-    color: 'warning',
+    color: 'from-magenta-500 to-magenta-600',
   },
 ]
 
@@ -70,10 +70,10 @@ const itemVariants = {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<StatCard[]>([
-    { title: 'Active Goals', value: '-', subtitle: '...', icon: <Target className="w-6 h-6" />, color: 'primary' },
-    { title: 'Habits Done Today', value: '-', subtitle: '...', icon: <Zap className="w-6 h-6" />, color: 'success' },
-    { title: 'Monthly Spent', value: '-', subtitle: '...', icon: <IndianRupee className="w-6 h-6" />, color: 'accent' },
-    { title: 'Productivity Score', value: '-', subtitle: '...', icon: <BarChart3 className="w-6 h-6" />, color: 'warning' },
+    { title: 'Active Goals', value: '-', subtitle: '...', icon: <Target className="w-6 h-6" />, color: 'from-cyan-500 to-cyan-600' },
+    { title: 'Habits Done Today', value: '-', subtitle: '...', icon: <Zap className="w-6 h-6" />, color: 'from-green-500 to-green-600' },
+    { title: 'Monthly Spent', value: '-', subtitle: '...', icon: <IndianRupee className="w-6 h-6" />, color: 'from-purple-500 to-purple-600' },
+    { title: 'Productivity Score', value: '-', subtitle: '...', icon: <BarChart3 className="w-6 h-6" />, color: 'from-magenta-500 to-magenta-600' },
   ])
   const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -143,10 +143,10 @@ export default function DashboardPage() {
       const prodScore = totalHabitsCount ? Math.round(((habitsDoneCount || 0) / totalHabitsCount) * 100) : 0
 
       setStats([
-        { title: 'Active Goals', value: `${goalsCount || 0}`, subtitle: 'System Objectives', icon: <Target className="w-6 h-6" />, color: 'primary' },
-        { title: 'Habits Done Today', value: `${habitsDoneCount || 0}`, subtitle: 'Daily Rituals', icon: <Zap className="w-6 h-6" />, color: 'success' },
-        { title: 'Monthly Spent', value: `₹${totalSpent.toLocaleString()}`, subtitle: 'Budget Audit', icon: <IndianRupee className="w-6 h-6" />, color: 'accent' },
-        { title: 'Productivity Score', value: `${prodScore}%`, subtitle: 'Efficiency Level', icon: <BarChart3 className="w-6 h-6" />, color: 'warning' },
+        { title: 'Active Goals', value: `${goalsCount || 0}`, subtitle: 'System Objectives', icon: <Target className="w-6 h-6" />, color: 'from-cyan-500 to-cyan-600' },
+        { title: 'Habits Done Today', value: `${habitsDoneCount || 0}`, subtitle: 'Daily Rituals', icon: <Zap className="w-6 h-6" />, color: 'from-green-500 to-green-600' },
+        { title: 'Monthly Spent', value: `₹${totalSpent.toLocaleString()}`, subtitle: 'Budget Audit', icon: <IndianRupee className="w-6 h-6" />, color: 'from-purple-500 to-purple-600' },
+        { title: 'Productivity Score', value: `${prodScore}%`, subtitle: 'Efficiency Level', icon: <BarChart3 className="w-6 h-6" />, color: 'from-magenta-500 to-magenta-600' },
       ])
 
       // Recent Activity
@@ -186,44 +186,38 @@ export default function DashboardPage() {
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight leading-none premium-text">Operational Interface</h1>
-        <p className="text-foreground/60 text-base font-medium">Synchronizing biometric and behavioral data streams.</p>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight leading-none">Dashboard</h1>
+        <p className="text-gray-400 text-base font-medium">Overview of your activity and progress</p>
       </motion.div>
 
       {/* Stats Grid */}
       <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
         variants={containerVariants}
       >
         {stats.map((stat, index) => (
-          <motion.div key={index} variants={itemVariants}>
-            <GlowCard
-              customSize
-              glowColor={stat.color === 'primary' ? 'cyan' : stat.color === 'success' ? 'green' : stat.color === 'accent' ? 'purple' : 'orange'}
-              className="p-6 flex flex-col justify-between min-h-[140px] group transition-all duration-300"
-            >
+          <motion.div key={index} variants={itemVariants} className="glass rounded-xl p-6 border border-cyan-500/20">
             <div className="flex items-start justify-between mb-4">
               <div className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center bg-card border border-border transition-all duration-500 group-hover:scale-110",
-                stat.color === 'primary' ? 'text-primary group-hover:bg-primary/10' :
-                stat.color === 'success' ? 'text-success group-hover:bg-success/10' :
-                stat.color === 'accent' ? 'text-accent group-hover:bg-accent/10' :
-                'text-warning group-hover:bg-warning/10'
+                "w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-500/10 border border-cyan-500/20",
+                stat.color.includes('cyan') ? 'text-cyan-400' :
+                stat.color.includes('green') ? 'text-green-400' :
+                stat.color.includes('purple') ? 'text-purple-400' :
+                'text-pink-400'
               )}>
                 {stat.icon}
               </div>
               {stat.title === 'Productivity Score' && (
-                <TrendingUp className="w-5 h-5 text-success" />
+                <TrendingUp className="w-5 h-5 text-green-400" />
               )}
             </div>
             <div>
-              <p className="text-[9px] font-bold text-foreground/40 uppercase tracking-[0.2em] mb-1">{stat.title}</p>
+              <p className="text-sm text-gray-400 mb-1">{stat.title}</p>
               <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-bold text-foreground tracking-tight">{stat.value}</p>
-                <p className="text-[9px] text-foreground/40 font-bold uppercase tracking-wider">{stat.subtitle}</p>
+                <p className="text-2xl font-bold text-white">{stat.value}</p>
               </div>
+              <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
             </div>
-            </GlowCard>
           </motion.div>
         ))}
       </motion.div>
@@ -234,65 +228,56 @@ export default function DashboardPage() {
           {/* Recent Activity */}
           <motion.div variants={itemVariants} className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground tracking-tight">System Logs</h2>
-              <Button variant="ghost" className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">Audit History</Button>
+              <h2 className="text-xl font-bold text-white">Recent Activity</h2>
             </div>
-            <GlowCard customSize glowColor="blue" className="p-3">
+            <div className="glass rounded-xl border border-cyan-500/20 p-4">
               {activities.length === 0 ? (
-                <div className="p-12 text-center text-muted-foreground font-medium italic transition-colors duration-300">No recent system anomalies detected</div>
+                <div className="p-12 text-center text-gray-400 font-medium italic">No recent activity</div>
               ) : (
                 <div className="space-y-2">
                   {activities.map((activity, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 hover:bg-card/50 transition-all duration-300 rounded-xl group border border-transparent hover:border-border">
+                    <div key={idx} className="flex items-center justify-between p-4 hover:bg-cyan-500/5 transition-all rounded-xl group">
                       <div className="flex items-center gap-4">
                         <div className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center bg-card border border-border transition-all",
-                          activity.type === 'expense' ? 'text-accent group-hover:bg-accent/10' : 'text-primary group-hover:bg-primary/10'
+                          "w-10 h-10 rounded-lg flex items-center justify-center",
+                          activity.type === 'expense' ? 'bg-purple-500/20 text-purple-400' : 'bg-cyan-500/20 text-cyan-400'
                         )}>
                           {activity.type === 'expense' ? <IndianRupee size={18} /> : <Target size={18} />}
                         </div>
                         <div>
-                          <p className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">{activity.title}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">{activity.desc}</p>
+                          <p className="font-semibold text-sm text-white">{activity.title}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{activity.desc}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{new Date(activity.date).toLocaleDateString()}</span>
-                        <div className="mt-1 flex justify-end">
-                          <div className="w-1 h-1 rounded-full bg-border" />
-                        </div>
-                      </div>
+                      <span className="text-xs text-gray-500">{new Date(activity.date).toLocaleDateString()}</span>
                     </div>
                   ))}
                 </div>
               )}
-            </GlowCard>
+            </div>
           </motion.div>
 
           {/* AI Insights Preview */}
           <motion.div variants={itemVariants} className="space-y-4">
-            <h2 className="text-lg font-bold text-foreground tracking-tight">System Intelligence</h2>
-            <GlowCard customSize glowColor="magenta" className="p-8 relative overflow-hidden bg-gradient-to-br from-accent/10 via-transparent to-primary/10 transition-colors duration-300">
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Sparkles className="w-20 h-20 text-accent" />
-              </div>
-              <div className="flex items-start gap-5 relative z-10">
-                <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 text-accent shadow-lg shadow-accent/10 transition-colors duration-300">
+            <h2 className="text-lg font-bold text-white">AI Insights</h2>
+            <div className="glass rounded-xl border border-cyan-500/20 p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-lg bg-cyan-500/20 text-cyan-400">
                   <TrendingUp className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-base font-bold mb-1 text-foreground">Productivity Optimization</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-4 transition-colors duration-300">
-                    Based on your recent activity, your productivity has increased by <span className="text-accent font-bold">12%</span> over the past week. Maintain your current meditation streak for continued cognitive enhancement.
+                  <h3 className="text-base font-bold mb-1 text-white">Productivity Trend</h3>
+                  <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                    Based on your recent activity, your productivity is trending positively. Keep up the good work!
                   </p>
                   <Link href="/insights">
-                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 h-9 text-[10px] font-bold uppercase tracking-wider transition-all duration-300">
-                      Explore Full Analysis
+                    <Button className="bg-cyan-500 hover:bg-cyan-600 text-white">
+                      View Insights
                     </Button>
                   </Link>
                 </div>
               </div>
-            </GlowCard>
+            </div>
           </motion.div>
         </div>
 
@@ -300,31 +285,27 @@ export default function DashboardPage() {
         <div className="space-y-8">
           {/* Quick Actions */}
           <motion.div variants={itemVariants} className="space-y-4">
-            <h2 className="text-xl font-bold text-foreground tracking-tight">Command Center</h2>
+            <h2 className="text-xl font-bold text-white">Quick Actions</h2>
             <div className="flex flex-col gap-3">
               {[
-                { href: '/goals', icon: <Target size={20} />, title: 'Set Objectives', subtitle: 'Goal Management', color: 'cyan' },
-                { href: '/habits', icon: <Zap size={20} />, title: 'Log Rituals', subtitle: 'Habit Tracking', color: 'green' },
-                { href: '/expenses', icon: <IndianRupee size={20} />, title: 'Audit Finances', subtitle: 'Expense Logging', color: 'purple' },
+                { href: '/goals', icon: <Target size={20} />, title: 'Set Goals', subtitle: 'Goal Management', color: 'cyan' },
+                { href: '/habits', icon: <Zap size={20} />, title: 'Track Habits', subtitle: 'Habit Tracking', color: 'green' },
+                { href: '/expenses', icon: <IndianRupee size={20} />, title: 'Log Expenses', subtitle: 'Expense Logging', color: 'purple' },
               ].map((action, i) => (
                 <Link key={i} href={action.href}>
-                  <GlowCard
-                    customSize
-                    glowColor={action.color as any}
-                    className="p-4 hover:translate-y-[-2px] transition-all duration-300 group flex items-center gap-5 cursor-pointer hover:shadow-[0_20px_40px_color-mix(in_srgb,var(--primary)_15%,transparent)]"
-                  >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500 ${action.color === 'cyan' ? 'bg-primary/10 text-primary group-hover:bg-primary/20' :
-                      action.color === 'green' ? 'bg-success/10 text-success group-hover:bg-success/20' :
-                        'bg-accent/10 text-accent group-hover:bg-accent/20'
+                  <div className="glass rounded-xl border border-cyan-500/20 p-4 hover:bg-cyan-500/5 transition-all cursor-pointer flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${action.color === 'cyan' ? 'bg-cyan-500/20 text-cyan-400' :
+                      action.color === 'green' ? 'bg-green-500/20 text-green-400' :
+                        'bg-purple-500/20 text-purple-400'
                       }`}>
                       {action.icon}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-foreground mb-0.5">{action.title}</p>
-                      <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">{action.subtitle}</p>
+                      <p className="text-sm font-semibold text-white">{action.title}</p>
+                      <p className="text-xs text-gray-500">{action.subtitle}</p>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground ml-auto group-hover:text-foreground group-hover:translate-x-1 transition-all duration-500" />
-                  </GlowCard>
+                    <ArrowRight className="w-4 h-4 text-gray-500 ml-auto" />
+                  </div>
                 </Link>
               ))}
             </div>
@@ -332,23 +313,16 @@ export default function DashboardPage() {
 
           {/* Time Overview */}
           <motion.div variants={itemVariants} className="space-y-4">
-            <h2 className="text-xl font-bold text-foreground tracking-tight">System Status</h2>
-            <GlowCard customSize glowColor="cyan" className="p-6 flex flex-col gap-6 bg-gradient-to-br from-card/50 to-transparent shadow-2xl transition-colors duration-300">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="status-pulse-cyan" />
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Neural Link Sync</span>
-                </div>
-                <span className="text-[9px] font-bold text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10 shadow-[0_0_15px_color-mix(in_srgb,var(--primary)_10%,transparent)] transition-colors duration-300">Active</span>
+            <h2 className="text-xl font-bold text-white">System Status</h2>
+            <div className="glass rounded-xl border border-cyan-500/20 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm text-gray-400">Status</span>
+                <span className="text-xs font-bold text-green-400 bg-green-500/10 px-2 py-1 rounded-full">Online</span>
               </div>
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Core Latency</span>
-                  <span className="text-xs font-bold text-foreground">12ms</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Last Analysis</span>
-                  <span suppressHydrationWarning className="text-xs font-bold text-foreground">
+                  <span className="text-xs text-gray-500">Last sync</span>
+                  <span suppressHydrationWarning className="text-xs text-white">
                     {new Date().toLocaleTimeString('en-US', {
                       hour: '2-digit',
                       minute: '2-digit',
@@ -356,22 +330,22 @@ export default function DashboardPage() {
                     })}
                   </span>
                 </div>
-                <div className="pt-4 border-t border-border">
+                <div className="pt-3 border-t border-gray-700">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">System Integrity</span>
-                    <span className="text-[9px] font-bold text-success uppercase tracking-widest">Optimal</span>
+                    <span className="text-xs text-gray-500">System health</span>
+                    <span className="text-xs font-bold text-green-400">98%</span>
                   </div>
-                  <div className="w-full h-1 bg-border rounded-full overflow-hidden transition-colors duration-300">
+                  <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: '98%' }}
                       transition={{ duration: 2, ease: "easeOut" }}
-                      className="h-full bg-gradient-to-r from-primary to-accent transition-colors duration-300"
+                      className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
                     />
                   </div>
                 </div>
               </div>
-            </GlowCard>
+            </div>
           </motion.div>
         </div>
       </div>

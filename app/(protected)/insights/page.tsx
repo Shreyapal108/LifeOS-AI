@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Lightbulb,
@@ -151,6 +152,7 @@ export default function InsightsPage() {
   const [insights, setInsights] = useState<Insight[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     fetchAndGenerateInsights()
@@ -226,6 +228,123 @@ export default function InsightsPage() {
         }
       }
 
+      // 4. Study deadline alerts
+      const { data: studySessions } = await supabase.from('study_sessions').select('deadline').eq('user_id', user.id).not('deadline', 'is', null)
+      const upcomingDeadlines = (studySessions || []).filter((s: any) => {
+        if (!s.deadline) return false
+        const deadlineDate = new Date(s.deadline)
+        const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+        return daysUntilDeadline <= 3 && daysUntilDeadline >= 0
+      })
+      if (upcomingDeadlines.length > 0 && !existingTitles.has('Study Deadline Approaching')) {
+        newInsightsToInsert.push({
+          user_id: user.id,
+          insight_type: 'burnout_alert',
+          title: 'Study Deadline Approaching',
+          content: `You have ${upcomingDeadlines.length} study session(s) with deadlines in the next 3 days. Prioritize these to stay on track.`,
+          priority: 'high',
+          actionable_items: ['Review study schedule', 'Focus on upcoming deadlines', 'Adjust study plan if needed'],
+        })
+      }
+
+      // 5. Low study consistency warning
+      const { data: recentStudySessions } = await supabase.from('study_sessions').select('date, duration_minutes').eq('user_id', user.id).gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+      const studyDays = new Set((recentStudySessions || []).map((s: any) => s.date))
+      if (studyDays.size < 3 && !existingTitles.has('Low Study Consistency')) {
+        newInsightsToInsert.push({
+          user_id: user.id,
+          insight_type: 'recommendation',
+          title: 'Low Study Consistency',
+          content: 'You have studied on fewer than 3 days in the past week. Consistent study habits improve retention and progress.',
+          priority: 'medium',
+          actionable_items: ['Create a daily study schedule', 'Set study reminders', 'Start with short study sessions'],
+        })
+      }
+
+      // 6. Poor sleep / burnout warning
+      const { data: healthLogs } = await supabase.from('health_logs').select('sleep_hours, mood').eq('user_id', user.id).gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]).order('date', { ascending: false }).limit(7)
+      if (healthLogs && healthLogs.length >= 3) {
+        const avgSleep = healthLogs.reduce((sum: number, h: any) => sum + (h.sleep_hours || 0), 0) / healthLogs.length
+        const lowMoodCount = healthLogs.filter((h: any) => h.mood === 'tired' || h.mood === 'stressed').length
+        if (avgSleep < 6 || lowMoodCount >= 3) {
+          if (!existingTitles.has('Sleep and Mood Alert')) {
+            newInsightsToInsert.push({
+              user_id: user.id,
+              insight_type: 'burnout_alert',
+              title: 'Sleep and Mood Alert',
+              content: avgSleep < 6 
+                ? `Your average sleep over the past week is ${avgSleep.toFixed(1)} hours. Consider getting more rest to prevent burnout.`
+                : 'You have reported feeling tired or stressed frequently. Consider taking a break and prioritizing self-care.',
+              priority: 'high',
+              actionable_items: ['Aim for 7-8 hours of sleep', 'Take short breaks during work', 'Practice relaxation techniques'],
+            })
+          }
+        }
+      }
+
+      // 7. Low water intake reminder
+      const { data: todayHealthLog } = await supabase.from('health_logs').select('water_intake_liters').eq('user_id', user.id).eq('date', today).single()
+      if (todayHealthLog && todayHealthLog.water_intake_liters < 1.5 && !existingTitles.has('Low Water Intake')) {
+        newInsightsToInsert.push({
+          user_id: user.id,
+          insight_type: 'recommendation',
+          title: 'Low Water Intake',
+          content: `You have only consumed ${todayHealthLog.water_intake_liters}L of water today. Aim for at least 2L for optimal health and cognitive function.`,
+          priority: 'low',
+          actionable_items: ['Drink a glass of water now', 'Set water intake reminders', 'Track water consumption'],
+        })
+      }
+
+      // 8. Career goal progress reminder
+      const { data: careerGoals } = await supabase.from('career_goals').select('progress, target_date').eq('user_id', user.id)
+      const stalledCareerGoals = (careerGoals || []).filter((g: any) => {
+        if (!g.target_date) return false
+        const daysUntilTarget = Math.ceil((new Date(g.target_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+        return (g.progress || 0) < 50 && daysUntilTarget <= 30 && daysUntilTarget >= 0
+      })
+      if (stalledCareerGoals.length > 0 && !existingTitles.has('Career Goal Progress Alert')) {
+        newInsightsToInsert.push({
+          user_id: user.id,
+          insight_type: 'recommendation',
+          title: 'Career Goal Progress Alert',
+          content: `You have ${stalledCareerGoals.length} career goal(s) with less than 50% progress and deadlines within 30 days. Take action to stay on track.`,
+          priority: 'medium',
+          actionable_items: ['Review career goals', 'Break down goals into smaller tasks', 'Adjust timeline if needed'],
+        })
+      }
+
+      // 9. Job application follow-up reminder
+      const { data: jobApplications } = await supabase.from('job_applications').select('applied_date, status').eq('user_id', user.id).in('status', ['applied', 'under_review'])
+      const pendingFollowUp = (jobApplications || []).filter((j: any) => {
+        if (!j.applied_date) return false
+        const daysSinceApplied = Math.floor((new Date().getTime() - new Date(j.applied_date).getTime()) / (1000 * 60 * 60 * 24))
+        return daysSinceApplied >= 7 && daysSinceApplied <= 14
+      })
+      if (pendingFollowUp.length > 0 && !existingTitles.has('Job Application Follow-up')) {
+        newInsightsToInsert.push({
+          user_id: user.id,
+          insight_type: 'recommendation',
+          title: 'Job Application Follow-up',
+          content: `You have ${pendingFollowUp.length} job application(s) that haven't been updated in 7-14 days. Consider following up with the recruiters.`,
+          priority: 'medium',
+          actionable_items: ['Send follow-up emails', 'Check application status', 'Update application tracker'],
+        })
+      }
+
+      // 10. Skill progress recommendation
+      const { data: skillRoadmap } = await supabase.from('skill_roadmap').select('progress').eq('user_id', user.id)
+      const lowProgressSkills = (skillRoadmap || []).filter((s: any) => (s.progress || 0) < 30)
+      if (lowProgressSkills.length >= 2 && !existingTitles.has('Skill Development Focus')) {
+        newInsightsToInsert.push({
+          user_id: user.id,
+          insight_type: 'recommendation',
+          title: 'Skill Development Focus',
+          content: `You have ${lowProgressSkills.length} skill(s) with less than 30% progress. Focus on one skill at a time for better results.`,
+          priority: 'low',
+          actionable_items: ['Prioritize one key skill', 'Create a learning plan', 'Set daily practice goals'],
+        })
+      }
+
       // Insert new insights
       if (newInsightsToInsert.length > 0) {
         await supabase.from('ai_insights').insert(newInsightsToInsert)
@@ -291,28 +410,24 @@ export default function InsightsPage() {
       animate="visible"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass rounded-2xl border border-white/5 p-8">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">AI Insights</h1>
-          <p className="text-foreground/60 text-sm mt-1">Predictive behavioral analysis and optimization</p>
+          <h1 className="text-2xl font-bold text-white">AI Insights</h1>
+          <p className="text-gray-400 text-sm mt-1">Personalized recommendations and alerts</p>
         </div>
         <div className="flex flex-col items-end">
-          <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">{activeInsights.length}</p>
-          <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest">Active Intelligence</p>
+          <p className="text-3xl font-bold text-cyan-400">{activeInsights.length}</p>
+          <p className="text-xs text-gray-500">Active insights</p>
         </div>
       </motion.div>
 
     {error && (
-      <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl text-sm font-medium flex items-center gap-3">
-        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-        Neural Link Error: {error}
-      </div>
+      <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg">{error}</div>
     )}
 
     {loading ? (
       <div className="flex flex-col items-center justify-center p-20 gap-4">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-500 shadow-lg shadow-cyan-500/20"></div>
-          <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest">Processing Behavioral Data...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
       </div>
     ) : (
       <div className="space-y-10">
@@ -323,57 +438,72 @@ export default function InsightsPage() {
                 <motion.div
                   key={insight.id}
                   variants={itemVariants}
-                  className={`glass rounded-2xl border border-white/5 p-8 group relative overflow-hidden transition-all duration-500 ${insight.type === 'burnout_alert' ? 'hover:shadow-[0_20px_45px_rgba(239,68,68,0.1)]' : 'hover:shadow-[0_20px_45px_rgba(6,182,212,0.1)]'
+                  className={`glass rounded-xl border border-cyan-500/20 p-6 group transition-all duration-300 ${insight.type === 'burnout_alert' ? 'border-red-500/20' : ''
                     }`}
                 >
                 <div className="flex flex-col lg:flex-row gap-8">
                   <div className="flex-1">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-all duration-500 ${insight.type === 'burnout_alert'
-                          ? 'bg-red-500/10 text-red-600 dark:text-red-400 shadow-red-500/10 group-hover:bg-red-500/20'
-                          : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shadow-cyan-500/10 group-hover:bg-cyan-500/20'
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${insight.type === 'burnout_alert'
+                          ? 'bg-red-500/20 text-red-400'
+                          : 'bg-cyan-500/20 text-cyan-400'
                           }`}>
                           {getInsightIcon(insight.type)}
                         </div>
                         <div>
-                          <div className="flex items-center gap-3 mb-0.5">
-                            <h3 className="text-lg font-bold text-foreground tracking-tight">{insight.title}</h3>
-                            <span className={`px-1.5 py-0.5 rounded text-[7px] font-bold uppercase tracking-widest border ${getPriorityColor(insight.priority)}`}>
-                              {insight.priority} Priority
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="text-base font-semibold text-white">{insight.title}</h3>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getPriorityColor(insight.priority)}`}>
+                              {insight.priority}
                             </span>
                           </div>
-                          <p className="text-[9px] font-bold text-foreground/40 uppercase tracking-widest">Type: {insight.type.replace('_', ' ')}</p>
+                          <p className="text-xs text-gray-500">{insight.type.replace('_', ' ')}</p>
                         </div>
                       </div>
 
-                      <p className="text-foreground/70 leading-relaxed text-sm mb-6">
+                      <p className="text-gray-300 leading-relaxed text-sm mb-4">
                         {insight.content}
                       </p>
 
-                      <div className="space-y-3">
-                        <p className="text-[9px] font-bold text-foreground/40 uppercase tracking-widest">Optimization Protocols</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {insight.actionItems.map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-3 p-3 rounded-2xl bg-foreground/5 border border-border text-foreground/70 text-[11px] font-medium hover:border-cyan-500/20 transition-colors">
-                              <Zap size={14} className="text-cyan-600 dark:text-cyan-400" />
-                              {item}
-                            </div>
-                          ))}
+                      {insight.actionItems.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-500">Action items</p>
+                          <div className="space-y-2">
+                            {insight.actionItems.map((item, idx) => (
+                              <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 text-gray-300 text-xs">
+                                <Zap size={12} className="text-cyan-400" />
+                                {item}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                   </div>
 
                     <div className="lg:w-40 flex flex-col gap-2 justify-center">
-                      <Button className="futuristic-button w-full h-10 text-[9px] font-bold uppercase tracking-widest">
+                      <Button
+                        onClick={() => {
+                          if (insight.title.includes('Habit')) {
+                            router.push('/habits')
+                          } else if (insight.title.includes('Budget')) {
+                            router.push('/expenses')
+                          } else if (insight.title.includes('Goal')) {
+                            router.push('/goals')
+                          } else {
+                            router.push('/dashboard')
+                          }
+                        }}
+                        className="bg-cyan-500 hover:bg-cyan-600 text-white w-full"
+                      >
                         Take Action
-                        <ArrowRight size={12} className="ml-2" />
+                        <ArrowRight size={14} className="ml-2" />
                       </Button>
                       <Button
                         variant="ghost"
                         onClick={() => dismissInsight(insight.id)}
-                        className="w-full h-10 text-[9px] font-bold uppercase tracking-widest text-foreground/40 hover:text-foreground hover:bg-foreground/5"
+                        className="border border-cyan-500/30 hover:bg-cyan-500/10 text-white w-full"
                       >
-                        Acknowledge
+                        Dismiss
                       </Button>
                     </div>
                 </div>
@@ -386,25 +516,20 @@ export default function InsightsPage() {
         {activeInsights.length === 0 && (
             <motion.div
               variants={itemVariants}
-              className="glass rounded-2xl border border-white/5 p-20 text-center flex flex-col items-center"
+              className="glass rounded-xl border border-cyan-500/20 p-12 text-center flex flex-col items-center"
             >
-              <div className="w-20 h-20 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-6 shadow-lg shadow-cyan-500/10">
-                <Brain className="w-10 h-10 text-cyan-600 dark:text-cyan-400" />
+              <div className="w-16 h-16 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4">
+                <Brain className="w-8 h-8 text-cyan-400" />
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-foreground">Neural Processing Clear</h3>
-              <p className="text-foreground/60 mb-10 max-w-md">No behavioral anomalies or optimization opportunities detected. Your current operational flow is optimal.</p>
-              {insights.some((i) => i.dismissed) && (
-                <Button variant="ghost" className="text-xs font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10">
-                  Audit Previous Logs
-                </Button>
-              )}
+              <h3 className="text-xl font-bold mb-2 text-white">No active insights</h3>
+              <p className="text-gray-400 mb-6 max-w-md">No recommendations or alerts at this time.</p>
             </motion.div>
         )}
 
         {/* Dismissed Insights */}
         {insights.some((i) => i.dismissed) && (
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-foreground tracking-tight">Intelligence Logs</h2>
+              <h2 className="text-lg font-bold text-white">Dismissed</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {insights
                   .filter((i) => i.dismissed)
@@ -412,21 +537,21 @@ export default function InsightsPage() {
                     <motion.div
                       key={insight.id}
                       variants={itemVariants}
-                      className="glass rounded-xl border border-white/5 p-4 flex items-center justify-between opacity-50 hover:opacity-100 transition-all duration-500"
+                      className="glass rounded-xl border border-gray-700 p-4 flex items-center justify-between opacity-50 hover:opacity-100 transition-all duration-300"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl bg-foreground/5 ${getInsightIconColor(insight.type)}`}>
+                        <div className={`p-2 rounded-lg bg-white/5 ${getInsightIconColor(insight.type)}`}>
                           {getInsightIcon(insight.type)}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-foreground">{insight.title}</p>
-                          <p className="text-[9px] font-bold text-foreground/40 uppercase tracking-widest">Archived Protocol</p>
+                          <p className="text-sm font-semibold text-white">{insight.title}</p>
+                          <p className="text-xs text-gray-500">Dismissed</p>
                         </div>
                       </div>
                       <Button
                         variant="ghost"
                         onClick={() => restoreInsight(insight.id)}
-                        className="h-8 px-3 text-[10px] font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
+                        className="border border-cyan-500/30 hover:bg-cyan-500/10 text-white h-8 px-3 text-xs"
                       >
                         Restore
                       </Button>
@@ -437,29 +562,29 @@ export default function InsightsPage() {
         )}
 
         {/* AI Info Card */}
-          <motion.div variants={itemVariants} className="glass rounded-2xl border border-white/5 p-8 bg-gradient-to-br from-purple-500/5 to-cyan-500/5">
-            <h2 className="text-xl font-bold text-foreground tracking-tight mb-8">Intelligence Framework</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shadow-lg shadow-purple-500/5">
+          <motion.div variants={itemVariants} className="glass rounded-xl border border-cyan-500/20 p-6">
+            <h2 className="text-lg font-bold text-white mb-6">How AI Insights Work</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
                   <Brain size={20} />
                 </div>
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-widest">Behavioral Engine</h4>
-                <p className="text-[11px] text-foreground/50 leading-relaxed">Systematic analysis of habit loops and goal adherence vectors to identify performance correlations.</p>
+                <h4 className="text-xs font-bold text-white uppercase">Behavioral Engine</h4>
+                <p className="text-xs text-gray-500 leading-relaxed">Analyzes your habits and goals to identify patterns.</p>
               </div>
-              <div className="space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shadow-lg shadow-cyan-500/5">
+              <div className="space-y-2">
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
                   <TrendingUp size={20} />
                 </div>
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-widest">Predictive Modeling</h4>
-                <p className="text-[11px] text-foreground/50 leading-relaxed">Machine learning algorithms forecasting burnout thresholds and calculating objective completion probabilities.</p>
+                <h4 className="text-xs font-bold text-white uppercase">Predictive Modeling</h4>
+                <p className="text-xs text-gray-500 leading-relaxed">Forecasts burnout risks and goal completion probabilities.</p>
               </div>
-              <div className="space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400 shadow-lg shadow-green-500/5">
+              <div className="space-y-2">
+                <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400">
                   <Lightbulb size={20} />
                 </div>
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-widest">Optimization Protocols</h4>
-                <p className="text-[11px] text-foreground/50 leading-relaxed">Dynamic generation of actionable intervention strategies designed to maximize bio-digital efficiency.</p>
+                <h4 className="text-xs font-bold text-white uppercase">Optimization</h4>
+                <p className="text-xs text-gray-500 leading-relaxed">Generates actionable recommendations to improve efficiency.</p>
               </div>
             </div>
           </motion.div>

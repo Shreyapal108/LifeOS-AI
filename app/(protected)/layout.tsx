@@ -19,20 +19,22 @@ import {
   Home,
   X,
   Activity,
-  Sparkles
+  Sparkles,
+  Briefcase
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const navigationItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home, color: 'text-foreground group-hover:text-primary' },
-  { href: '/goals', label: 'Goals', icon: Target, color: 'text-foreground group-hover:text-primary' },
-  { href: '/habits', label: 'Habits', icon: Zap, color: 'text-foreground group-hover:text-success' },
-  { href: '/expenses', label: 'Expenses', icon: IndianRupee, color: 'text-foreground group-hover:text-accent' },
-  { href: '/study', label: 'Study', icon: BookOpen, color: 'text-foreground group-hover:text-primary' },
-  { href: '/health', label: 'Health', icon: Activity, color: 'text-foreground group-hover:text-destructive' },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3, color: 'text-foreground group-hover:text-accent' },
-  { href: '/insights', label: 'AI Insights', icon: Lightbulb, color: 'text-foreground group-hover:text-accent' },
-  { href: '/settings', label: 'Settings', icon: Settings, color: 'text-foreground group-hover:text-muted-foreground' },
+  { href: '/dashboard', label: 'Dashboard', icon: Home, color: 'text-white group-hover:text-cyan-400' },
+  { href: '/goals', label: 'Goals', icon: Target, color: 'text-white group-hover:text-cyan-400' },
+  { href: '/habits', label: 'Habits', icon: Zap, color: 'text-white group-hover:text-yellow-400' },
+  { href: '/expenses', label: 'Expenses', icon: IndianRupee, color: 'text-white group-hover:text-green-400' },
+  { href: '/study', label: 'Study', icon: BookOpen, color: 'text-white group-hover:text-blue-400' },
+  { href: '/health', label: 'Health', icon: Activity, color: 'text-white group-hover:text-rose-400' },
+  { href: '/career', label: 'Career', icon: Briefcase, color: 'text-white group-hover:text-orange-400' },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3, color: 'text-white group-hover:text-purple-400' },
+  { href: '/insights', label: 'AI Insights', icon: Lightbulb, color: 'text-white group-hover:text-magenta-400' },
+  { href: '/settings', label: 'Settings', icon: Settings, color: 'text-white group-hover:text-gray-300' },
 ]
 
 export default function ProtectedLayout({
@@ -51,24 +53,24 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="flex h-screen bg-background text-foreground overflow-hidden relative transition-colors duration-300">
+    <div className="flex h-screen bg-[#030303] text-white overflow-hidden relative">
       {/* Abstract Background for internal pages */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden transition-colors duration-300">
-        <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-accent/10 rounded-full blur-[150px] transition-colors duration-300" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-primary/10 rounded-full blur-[150px] transition-colors duration-300" />
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-purple-500/10 rounded-full blur-[150px]" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-cyan-500/10 rounded-full blur-[150px]" />
       </div>
 
       {/* Floating Glass Sidebar (Desktop) */}
       <div className="hidden md:flex flex-col p-4 z-20 h-full w-72">
-        <div className="glass rounded-[2rem] flex flex-col h-full overflow-hidden border-border shadow-[0_0_30px_color-mix(in_srgb,var(--primary)_5%,transparent)] transition-colors duration-300">
+        <div className="glass rounded-[2rem] flex flex-col h-full overflow-hidden border-white/5 shadow-[0_0_30px_rgba(0,229,255,0.05)]">
           {/* Logo */}
           <div className="p-6 pt-8 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-[0_0_15px_color-mix(in_srgb,var(--primary)_30%,transparent)] transition-colors duration-300">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center shadow-[0_0_15px_rgba(0,229,255,0.3)]">
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground leading-none transition-colors duration-300">LifeOS AI</h1>
-              <p className="text-[10px] text-primary uppercase tracking-widest mt-1 font-semibold transition-colors duration-300">Operating System</p>
+              <h1 className="text-xl font-bold tracking-tight text-white leading-none">LifeOS AI</h1>
+              <p className="text-[10px] text-cyan-400 uppercase tracking-widest mt-1 font-semibold">Operating System</p>
             </div>
           </div>
 
@@ -86,8 +88,8 @@ export default function ProtectedLayout({
                   <motion.div
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group cursor-pointer ${
                       isActive
-                        ? 'bg-primary/10 shadow-[inset_0_0_20px_color-mix(in_srgb,var(--primary)_5%,transparent)]'
-                        : 'hover:bg-card/50'
+                        ? 'bg-white/10 shadow-[inset_0_0_20px_rgba(255,255,255,0.05)]'
+                        : 'hover:bg-white/5'
                     }`}
                     whileHover={{ x: 5 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -95,11 +97,11 @@ export default function ProtectedLayout({
                     {isActive && (
                       <motion.div
                         layoutId="active-nav-indicator"
-                        className="absolute left-0 w-1 h-8 bg-primary rounded-r-full shadow-[0_0_10px_color-mix(in_srgb,var(--primary)_80%,transparent)] transition-colors duration-300"
+                        className="absolute left-0 w-1 h-8 bg-cyan-400 rounded-r-full shadow-[0_0_10px_rgba(0,229,255,0.8)]"
                       />
                     )}
-                    <Icon className={`w-5 h-5 transition-colors duration-300 ${isActive ? 'text-primary drop-shadow-[0_0_8px_color-mix(in_srgb,var(--primary)_80%,transparent)]' : item.color}`} />
-                    <span className={`text-sm font-medium transition-colors duration-300 ${isActive ? 'text-foreground font-semibold' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                    <Icon className={`w-5 h-5 transition-colors duration-300 ${isActive ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(0,229,255,0.8)]' : item.color}`} />
+                    <span className={`text-sm font-medium transition-colors duration-300 ${isActive ? 'text-white font-semibold' : 'text-gray-400 group-hover:text-white'}`}>
                       {item.label}
                     </span>
                   </motion.div>
@@ -110,17 +112,17 @@ export default function ProtectedLayout({
 
           {/* User section */}
           <div className="p-4 mt-auto">
-            <div className="glass-light rounded-2xl p-4 flex items-center justify-between group hover:bg-card/50 transition-colors cursor-pointer border border-border transition-colors duration-300">
+            <div className="glass-light rounded-2xl p-4 flex items-center justify-between group hover:bg-white/5 transition-colors cursor-pointer border border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-sm font-bold shadow-[0_0_15px_color-mix(in_srgb,var(--primary)_30%,transparent)] transition-colors duration-300">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-purple-500 flex items-center justify-center text-sm font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]">
                   U
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-foreground transition-colors duration-300">User</p>
-                  <p className="text-xs text-muted-foreground transition-colors duration-300">Pro Plan</p>
+                  <p className="text-sm font-bold text-white">User</p>
+                  <p className="text-xs text-gray-400">Pro Plan</p>
                 </div>
               </div>
-              <button onClick={handleLogout} className="p-2 text-muted-foreground hover:text-foreground hover:bg-card/50 rounded-lg transition-colors duration-300">
+              <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
@@ -136,7 +138,7 @@ export default function ProtectedLayout({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-colors duration-300"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setSidebarOpen(false)}
             />
             <motion.div
@@ -146,15 +148,15 @@ export default function ProtectedLayout({
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="fixed inset-y-0 left-0 w-[80%] max-w-[300px] z-50 p-4"
             >
-              <div className="glass rounded-[2rem] flex flex-col h-full overflow-hidden border-border transition-colors duration-300">
+              <div className="glass rounded-[2rem] flex flex-col h-full overflow-hidden border-white/10">
                 <div className="p-6 flex items-center justify-between">
                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center transition-colors duration-300">
-                        <Sparkles className="w-4 h-4 text-primary-foreground" />
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-white" />
                       </div>
-                      <span className="text-xl font-bold tracking-tight text-foreground transition-colors duration-300">LifeOS AI</span>
+                      <span className="text-xl font-bold tracking-tight text-white">LifeOS AI</span>
                     </div>
-                  <button onClick={() => setSidebarOpen(false)} className="p-2 bg-card/50 hover:bg-card rounded-full transition-colors duration-300">
+                  <button onClick={() => setSidebarOpen(false)} className="p-2 bg-white/5 rounded-full">
                     <X size={20} />
                   </button>
                 </div>
@@ -168,17 +170,17 @@ export default function ProtectedLayout({
                         href={item.href}
                         onClick={() => setSidebarOpen(false)}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                          isActive ? 'bg-primary/10' : 'hover:bg-card/50'
+                          isActive ? 'bg-white/10' : 'hover:bg-white/5'
                         }`}
                       >
-                        <Icon className={`w-5 h-5 ${isActive ? 'text-primary drop-shadow-[0_0_8px_color-mix(in_srgb,var(--primary)_80%,transparent)]' : 'text-muted-foreground'} transition-colors duration-300`} />
-                        <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'} transition-colors duration-300`}>{item.label}</span>
+                        <Icon className={`w-5 h-5 ${isActive ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(0,229,255,0.8)]' : 'text-gray-400'}`} />
+                        <span className={`text-sm font-medium ${isActive ? 'text-white' : 'text-gray-400'}`}>{item.label}</span>
                       </Link>
                     )
                   })}
                 </nav>
-                <div className="p-4 mt-auto border-t border-border transition-colors duration-300">
-                  <Button onClick={handleLogout} variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-card/50 transition-colors duration-300">
+                <div className="p-4 mt-auto border-t border-white/5">
+                  <Button onClick={handleLogout} variant="ghost" className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/5">
                     <LogOut className="w-5 h-5 mr-3" />
                     Sign Out
                   </Button>
@@ -192,11 +194,11 @@ export default function ProtectedLayout({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 z-10 relative">
         {/* Mobile Header */}
-        <header className="md:hidden h-20 glass-light border-b border-border flex items-center justify-between px-6 z-30 transition-colors duration-300">
-          <button onClick={() => setSidebarOpen(true)} className="p-2 bg-card/50 hover:bg-card rounded-xl transition-colors duration-300">
+        <header className="md:hidden h-20 glass-light border-b border-white/5 flex items-center justify-between px-6 z-30">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
             <Menu size={24} />
           </button>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-xs font-bold shadow-[0_0_15px_color-mix(in_srgb,var(--primary)_30%,transparent)] transition-colors duration-300">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-purple-500 flex items-center justify-center text-xs font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]">
             U
           </div>
         </header>

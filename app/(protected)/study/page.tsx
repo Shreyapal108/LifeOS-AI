@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, BookOpen, Calendar, Clock, CheckCircle2, Circle, Trash2 } from 'lucide-react'
+import { Plus, BookOpen, Calendar, Clock, CheckCircle2, Circle, Trash2, Flame, AlertCircle, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 
 interface StudySession {
   id: string
   subject: string
+  topic?: string
   duration_minutes: number
   date: string
   deadline?: string
   notes?: string
   completion_status: 'pending' | 'in_progress' | 'completed'
+  scheduled_date?: string
+  reminder_enabled?: boolean
+  completed?: boolean
   created_at: string
 }
 
@@ -74,12 +78,117 @@ export default function StudyPage() {
   const [error, setError] = useState<string | null>(null)
   const [newSession, setNewSession] = useState({
     subject: '',
+    topic: '',
     duration_minutes: '',
     date: new Date().toISOString().split('T')[0],
+    scheduled_date: new Date().toISOString().split('T')[0],
     deadline: '',
     notes: '',
+    reminder_enabled: false,
     completion_status: 'pending' as const
   })
+
+  // Calculate study streak (consecutive days with completed sessions)
+  const calculateStreak = () => {
+    const completedDates = sessions
+      .filter(s => s.completion_status === 'completed')
+      .map(s => s.date)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+    
+    if (completedDates.length === 0) return 0
+    
+    let streak = 0
+    let currentDate = new Date()
+    currentDate.setHours(0, 0, 0, 0)
+    
+    const uniqueDates = [...new Set(completedDates)]
+    
+    for (let i = 0; i < uniqueDates.length; i++) {
+      const sessionDate = new Date(uniqueDates[i])
+      sessionDate.setHours(0, 0, 0, 0)
+      
+      const diffDays = Math.floor((currentDate.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      if (diffDays === streak) {
+        streak++
+      } else if (diffDays === streak + 1 && streak === 0) {
+        streak++
+      } else {
+        break
+      }
+      
+      currentDate = new Date(sessionDate)
+      currentDate.setDate(currentDate.getDate() - 1)
+    }
+    
+    return streak
+  }
+
+  // Get unique subjects and their progress
+  const getSubjectProgress = () => {
+    const subjectMap = new Map<string, { total: number; completed: number; hours: number }>()
+    
+    sessions.forEach(session => {
+      if (!subjectMap.has(session.subject)) {
+        subjectMap.set(session.subject, { total: 0, completed: 0, hours: 0 })
+      }
+      const data = subjectMap.get(session.subject)!
+      data.total++
+      data.hours += session.duration_minutes / 60
+      if (session.completion_status === 'completed') {
+        data.completed++
+      }
+    })
+    
+    return Array.from(subjectMap.entries()).map(([subject, data]) => ({
+      subject,
+      progress: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
+      hours: data.hours.toFixed(1),
+      total: data.total,
+      completed: data.completed
+    }))
+  }
+
+  // Get upcoming deadlines
+  const getUpcomingDeadlines = () => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    return sessions
+      .filter(s => s.deadline && s.completion_status !== 'completed')
+      .map(s => ({
+        ...s,
+        daysUntil: daysUntilDeadline(s.deadline!)
+      }))
+      .sort((a, b) => a.daysUntil - b.daysUntil)
+      .slice(0, 5)
+  }
+
+  // Get weekly schedule (next 7 days)
+  const getWeeklySchedule = () => {
+    const schedule: { date: string; sessions: StudySession[] }[] = []
+    const today = new Date()
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today)
+      date.setDate(date.getDate() + i)
+      const dateStr = date.toISOString().split('T')[0]
+      
+      const daySessions = sessions.filter(s => {
+        const sessionDate = s.scheduled_date || s.date
+        return sessionDate === dateStr
+      })
+      
+      schedule.push({ date: dateStr, sessions: daySessions })
+    }
+    
+    return schedule
+  }
+
+  const streak = calculateStreak()
+  const subjectProgress = getSubjectProgress()
+  const upcomingDeadlines = getUpcomingDeadlines()
+  const weeklySchedule = getWeeklySchedule()
 
   useEffect(() => {
     fetchSessions()
@@ -138,22 +247,28 @@ export default function StudyPage() {
       const { error } = await supabase.from('study_sessions').insert({
         user_id: user.id,
         subject: newSession.subject,
+        topic: newSession.topic || null,
         duration_minutes: Number(newSession.duration_minutes),
         date: newSession.date,
+        scheduled_date: newSession.scheduled_date || null,
         deadline: newSession.deadline || null,
         notes: newSession.notes || null,
+        reminder_enabled: newSession.reminder_enabled,
         completion_status: newSession.completion_status
       })
 
       if (error) throw error
-      
+
       setShowModal(false)
       setNewSession({
         subject: '',
+        topic: '',
         duration_minutes: '',
         date: new Date().toISOString().split('T')[0],
+        scheduled_date: new Date().toISOString().split('T')[0],
         deadline: '',
         notes: '',
+        reminder_enabled: false,
         completion_status: 'pending'
       })
       fetchSessions()
@@ -230,7 +345,7 @@ export default function StudyPage() {
 
       {/* Stats */}
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-4 gap-4"
         variants={containerVariants}
       >
         <motion.div
@@ -261,6 +376,126 @@ export default function StudyPage() {
           </p>
           <p className="text-xs text-gray-500 mt-2">in progress or pending</p>
         </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="glass rounded-xl p-6 border border-orange-500/20"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Flame className="w-4 h-4 text-orange-400" />
+            <p className="text-gray-400 text-sm">Study Streak</p>
+          </div>
+          <p className="text-3xl font-bold text-orange-400">{streak}</p>
+          <p className="text-xs text-gray-500 mt-2">consecutive days</p>
+        </motion.div>
+      </motion.div>
+
+      {/* Subject Progress */}
+      {subjectProgress.length > 0 && (
+        <motion.div variants={itemVariants} className="space-y-4">
+          <h2 className="text-xl font-bold">Subject Progress</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {subjectProgress.map((subject) => (
+              <motion.div
+                key={subject.subject}
+                variants={itemVariants}
+                className="glass rounded-xl p-6 border border-cyan-500/20"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-lg">{subject.subject}</h3>
+                    <p className="text-xs text-gray-500">{subject.completed}/{subject.total} sessions</p>
+                  </div>
+                  <span className="text-2xl font-bold text-cyan-400">{subject.progress}%</span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden mb-2">
+                  <div
+                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+                    style={{ width: `${subject.progress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">{subject.hours} hours total</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Upcoming Deadlines */}
+      {upcomingDeadlines.length > 0 && (
+        <motion.div variants={itemVariants} className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-orange-400" />
+            Upcoming Deadlines
+          </h2>
+          <div className="grid grid-cols-1 gap-3">
+            {upcomingDeadlines.map((session) => (
+              <motion.div
+                key={session.id}
+                variants={itemVariants}
+                className={`glass rounded-xl p-4 border transition-all ${
+                  session.daysUntil <= 3 ? 'border-red-500/30 bg-red-500/5' : 'border-cyan-500/20'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-semibold">{session.subject}</h3>
+                    {session.topic && <p className="text-sm text-gray-400">{session.topic}</p>}
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    session.daysUntil === 0 ? 'bg-red-500/20 text-red-400' :
+                    session.daysUntil <= 3 ? 'bg-orange-500/20 text-orange-400' :
+                    'bg-cyan-500/20 text-cyan-400'
+                  }`}>
+                    {session.daysUntil === 0 ? 'Due today' :
+                     session.daysUntil === 1 ? 'Due tomorrow' :
+                     `${session.daysUntil} days`}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Weekly Schedule */}
+      <motion.div variants={itemVariants} className="space-y-4">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-cyan-400" />
+          Weekly Schedule
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+          {weeklySchedule.map((day) => (
+            <motion.div
+              key={day.date}
+              variants={itemVariants}
+              className="glass rounded-xl p-4 border border-cyan-500/20"
+            >
+              <div className="text-center mb-3">
+                <p className="text-xs text-gray-500 uppercase">
+                  {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                </p>
+                <p className="text-2xl font-bold text-white">
+                  {new Date(day.date).getDate()}
+                </p>
+              </div>
+              <div className="space-y-2">
+                {day.sessions.slice(0, 3).map((session) => (
+                  <div
+                    key={session.id}
+                    className="text-xs p-2 rounded bg-cyan-500/10 border border-cyan-500/20"
+                  >
+                    <p className="font-semibold truncate">{session.subject}</p>
+                    <p className="text-gray-500">{session.duration_minutes}m</p>
+                  </div>
+                ))}
+                {day.sessions.length > 3 && (
+                  <p className="text-xs text-center text-gray-500">+{day.sessions.length - 3} more</p>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </motion.div>
 
       {/* Study Sessions */}
@@ -389,54 +624,84 @@ export default function StudyPage() {
             <form onSubmit={handleCreateSession} className="space-y-4">
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Subject</label>
-                <input 
-                  required 
-                  value={newSession.subject} 
-                  onChange={e => setNewSession({...newSession, subject: e.target.value})} 
-                  className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white" 
+                <input
+                  required
+                  value={newSession.subject}
+                  onChange={e => setNewSession({...newSession, subject: e.target.value})}
+                  className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white"
                   placeholder="e.g., Advanced TypeScript"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Topic (optional)</label>
+                <input
+                  value={newSession.topic}
+                  onChange={e => setNewSession({...newSession, topic: e.target.value})}
+                  className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white"
+                  placeholder="e.g., React Hooks"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Duration (minutes)</label>
-                  <input 
-                    type="number" 
-                    required 
-                    value={newSession.duration_minutes} 
-                    onChange={e => setNewSession({...newSession, duration_minutes: e.target.value})} 
-                    className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white" 
+                  <input
+                    type="number"
+                    required
+                    value={newSession.duration_minutes}
+                    onChange={e => setNewSession({...newSession, duration_minutes: e.target.value})}
+                    className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white"
                     placeholder="60"
                   />
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Date</label>
-                  <input 
-                    type="date" 
-                    required 
-                    value={newSession.date} 
-                    onChange={e => setNewSession({...newSession, date: e.target.value})} 
-                    className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white" 
+                  <input
+                    type="date"
+                    required
+                    value={newSession.date}
+                    onChange={e => setNewSession({...newSession, date: e.target.value})}
+                    className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Scheduled Date (optional)</label>
+                  <input
+                    type="date"
+                    value={newSession.scheduled_date}
+                    onChange={e => setNewSession({...newSession, scheduled_date: e.target.value})}
+                    className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Deadline (optional)</label>
+                  <input
+                    type="date"
+                    value={newSession.deadline}
+                    onChange={e => setNewSession({...newSession, deadline: e.target.value})}
+                    className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Deadline (optional)</label>
-                <input 
-                  type="date" 
-                  value={newSession.deadline} 
-                  onChange={e => setNewSession({...newSession, deadline: e.target.value})} 
-                  className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white" 
-                />
-              </div>
-              <div>
                 <label className="block text-sm text-gray-400 mb-1">Notes (optional)</label>
-                <textarea 
-                  value={newSession.notes} 
-                  onChange={e => setNewSession({...newSession, notes: e.target.value})} 
-                  className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white h-20 resize-none" 
+                <textarea
+                  value={newSession.notes}
+                  onChange={e => setNewSession({...newSession, notes: e.target.value})}
+                  className="w-full bg-[rgba(26,26,46,0.8)] border border-blue-500/30 rounded p-2 text-white h-20 resize-none"
                   placeholder="Additional notes about this study session..."
                 />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="reminder"
+                  checked={newSession.reminder_enabled}
+                  onChange={e => setNewSession({...newSession, reminder_enabled: e.target.checked})}
+                  className="w-4 h-4 rounded"
+                />
+                <label htmlFor="reminder" className="text-sm text-gray-400">Enable reminder</label>
               </div>
               <div className="flex gap-4 pt-4">
                 <Button type="button" variant="ghost" onClick={() => setShowModal(false)} className="flex-1 border border-blue-500/30 hover:bg-blue-500/10 text-white">Cancel</Button>

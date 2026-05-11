@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, TrendingUp, Calendar, Filter } from 'lucide-react'
+import { BarChart3, TrendingUp, Calendar, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   LineChart,
@@ -18,11 +18,51 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  AreaChart,
+  Area,
 } from 'recharts'
+import { useTheme } from 'next-themes'
 
 import { createClient } from '@/lib/supabase/client'
 
-const COLORS = ['#00d4ff', '#ff00ff', '#00ff88', '#ffaa00', '#ff0055']
+const CHART_COLORS = {
+  cyan: '#06b6d4',
+  purple: '#8b5cf6',
+  green: '#22c55e',
+  orange: '#f59e0b',
+  pink: '#ec4899',
+  blue: '#3b82f6',
+}
+
+const COLORS = ['#06b6d4', '#8b5cf6', '#22c55e', '#f59e0b', '#ec4899']
+
+// Custom premium tooltip component
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-black/80 backdrop-blur-xl border border-cyan-400/20 rounded-xl px-4 py-3 shadow-2xl shadow-cyan-500/10">
+        {label && <p className="text-xs text-gray-400 mb-2 font-medium">{label}</p>}
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+            <p className="text-xs text-white font-semibold">
+              {entry.name}: <span className="text-cyan-400">{entry.value}</span>
+            </p>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  return null
+}
+
+// Empty state component
+const EmptyChartState = ({ message }: { message: string }) => (
+  <div className="flex flex-col items-center justify-center h-64 text-center">
+    <Activity className="w-12 h-12 text-cyan-400/30 mb-3" />
+    <p className="text-sm text-gray-400">{message}</p>
+  </div>
+)
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -36,13 +76,18 @@ const containerVariants = {
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5 },
+    scale: 1,
+    transition: { duration: 0.6, ease: 'easeOut' },
   },
 }
+
+const chartContainerClass = "glass rounded-2xl border border-cyan-500/20 p-6 shadow-[0_8px_32px_rgba(6,182,212,0.08)] hover:shadow-[0_12px_48px_rgba(6,182,212,0.12)] transition-all duration-500"
+
+const isDark = () => typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
@@ -51,7 +96,12 @@ export default function AnalyticsPage() {
   const [habitTrackerData, setHabitTrackerData] = useState<any[]>([])
   const [expenseData, setExpenseData] = useState<any[]>([])
   const [habitKeys, setHabitKeys] = useState<string[]>([])
+  const [studyTrendData, setStudyTrendData] = useState<any[]>([])
+  const [healthTrendData, setHealthTrendData] = useState<any[]>([])
+  const [careerProgressData, setCareerProgressData] = useState<any[]>([])
+  const [skillCompletionData, setSkillCompletionData] = useState<any[]>([])
   const [metrics, setMetrics] = useState({ avgProductivity: 0, studyHours: 0, habitCompletion: 0, totalSpent: 0 })
+  const { theme } = useTheme()
 
   useEffect(() => {
     fetchAnalytics()
@@ -63,6 +113,10 @@ export default function AnalyticsPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'habit_logs' }, () => fetchAnalytics(false))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => fetchAnalytics(false))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'productivity_analytics' }, () => fetchAnalytics(false))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'study_sessions' }, () => fetchAnalytics(false))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'health_logs' }, () => fetchAnalytics(false))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'career_goals' }, () => fetchAnalytics(false))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'skill_roadmap' }, () => fetchAnalytics(false))
       .subscribe()
 
     return () => {
@@ -168,6 +222,40 @@ export default function AnalyticsPage() {
         totalSpent: totalExp
       })
 
+      // Study Hours Trend (last 30 days)
+      const last30Days = [...Array(30)].map((_, i) => {
+        const d = new Date()
+        d.setDate(d.getDate() - (29 - i))
+        return d.toISOString().split('T')[0]
+      })
+      const { data: studyTrend } = await supabase.from('study_sessions').select('date, duration_minutes').eq('user_id', user.id).gte('date', last30Days[0])
+      const studyMap: Record<string, number> = {}
+      ;(studyTrend || []).forEach((s: any) => {
+        studyMap[s.date] = (studyMap[s.date] || 0) + (s.duration_minutes || 0) / 60
+      })
+      const sData = last30Days.map(dateStr => {
+        const d = new Date(dateStr)
+        return { date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), hours: studyMap[dateStr] || 0 }
+      })
+      setStudyTrendData(sData)
+
+      // Health Wellness Trend (last 7 days)
+      const { data: healthTrend } = await supabase.from('health_logs').select('date, sleep_hours, water_intake_liters').eq('user_id', user.id).gte('date', last7Days[0])
+      const healthData = last7Days.map(dateStr => {
+        const match = healthTrend?.find((h: any) => h.date === dateStr)
+        const d = new Date(dateStr)
+        return { date: d.toLocaleDateString('en-US', { weekday: 'short' }), sleep: match ? match.sleep_hours : 0, water: match ? match.water_intake_liters : 0 }
+      })
+      setHealthTrendData(healthData)
+
+      // Career Progress Overview
+      const { data: careerGoals } = await supabase.from('career_goals').select('title, progress, status').eq('user_id', user.id)
+      setCareerProgressData((careerGoals || []).map((g: any) => ({ name: g.title, progress: g.progress || 0, status: g.status })))
+
+      // Skill Completion Chart
+      const { data: skills } = await supabase.from('skill_roadmap').select('skill_name, progress').eq('user_id', user.id)
+      setSkillCompletionData((skills || []).map((s: any) => ({ name: s.skill_name, progress: s.progress || 0 })))
+
     } catch (err) {
       console.error(err)
     } finally {
@@ -184,23 +272,14 @@ export default function AnalyticsPage() {
     >
       {loading && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-500 shadow-lg shadow-cyan-500/20"></div>
-            <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest animate-pulse">Compiling Data Analytics...</p>
-          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
         </div>
       )}
       {/* Header */}
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground neon-glow-cyan">Analytics</h1>
-          <p className="text-foreground/60 text-lg">System-wide performance metrics and visualization</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button className="futuristic-button text-white">
-            <Filter size={16} />
-            Filter
-          </Button>
+          <h1 className="text-2xl font-bold text-white">Analytics</h1>
+          <p className="text-gray-400 text-lg">View your performance metrics and trends</p>
         </div>
       </motion.div>
 
@@ -209,36 +288,28 @@ export default function AnalyticsPage() {
         className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6"
         variants={containerVariants}
       >
-        <div className="glass rounded-xl border border-cyan-500/20 p-6 flex flex-col justify-between min-h-[140px]">
-          <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest mb-1">Productivity Index</p>
-          <div>
-            <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">{metrics.avgProductivity}%</p>
-            <p className="text-[10px] text-foreground/40 font-medium mt-1 uppercase tracking-wider">Weighted weekly average</p>
-          </div>
+        <div className="glass rounded-xl border border-cyan-500/20 p-6">
+          <p className="text-sm text-gray-400 mb-2">Productivity</p>
+          <p className="text-3xl font-bold text-cyan-400">{metrics.avgProductivity}%</p>
+          <p className="text-xs text-gray-500 mt-1">Weekly average</p>
         </div>
 
-        <div className="glass rounded-xl border border-green-500/20 p-6 flex flex-col justify-between min-h-[140px]">
-          <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest mb-1">Knowledge Acquisition</p>
-          <div>
-            <p className="text-3xl font-bold text-green-600 dark:text-green-400">{metrics.studyHours.toFixed(1)}h</p>
-            <p className="text-[10px] text-foreground/40 font-medium mt-1 uppercase tracking-wider">Focus cycle duration (30D)</p>
-          </div>
+        <div className="glass rounded-xl border border-green-500/20 p-6">
+          <p className="text-sm text-gray-400 mb-2">Study Time</p>
+          <p className="text-3xl font-bold text-green-400">{metrics.studyHours.toFixed(1)}h</p>
+          <p className="text-xs text-gray-500 mt-1">This month</p>
         </div>
 
-        <div className="glass rounded-xl border border-purple-500/20 p-6 flex flex-col justify-between min-h-[140px]">
-          <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest mb-1">Habit Consistency</p>
-          <div>
-            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{metrics.habitCompletion}%</p>
-            <p className="text-[10px] text-foreground/40 font-medium mt-1 uppercase tracking-wider">Protocol adherence rate</p>
-          </div>
+        <div className="glass rounded-xl border border-purple-500/20 p-6">
+          <p className="text-sm text-gray-400 mb-2">Habit Completion</p>
+          <p className="text-3xl font-bold text-purple-400">{metrics.habitCompletion}%</p>
+          <p className="text-xs text-gray-500 mt-1">Today</p>
         </div>
 
-        <div className="glass rounded-xl border border-orange-500/20 p-6 flex flex-col justify-between min-h-[140px]">
-          <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest mb-1">Capital Expenditure</p>
-          <div>
-            <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">₹{metrics.totalSpent.toLocaleString()}</p>
-            <p className="text-[10px] text-foreground/40 font-medium mt-1 uppercase tracking-wider">Financial throughput (30D)</p>
-          </div>
+        <div className="glass rounded-xl border border-orange-500/20 p-6">
+          <p className="text-sm text-gray-400 mb-2">Total Spent</p>
+          <p className="text-3xl font-bold text-orange-400">₹{metrics.totalSpent.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">This month</p>
         </div>
       </motion.div>
 
@@ -246,168 +317,322 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Productivity Line Chart */}
         <motion.div variants={itemVariants} className="space-y-6">
-          <h2 className="text-xl font-bold text-foreground tracking-tight">Performance Vectors</h2>
-          <div className="glass rounded-2xl p-8 border border-white/5">
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart data={productivityData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  stroke="currentColor"
-                  className="text-foreground/30"
-                  fontSize={10}
-                  fontWeight="bold"
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  stroke="currentColor"
-                  className="text-foreground/30"
-                  fontSize={10}
-                  fontWeight="bold"
-                  tick={{ fill: 'text-foreground/30' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(10,10,20,0.9)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '16px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                  }}
-                  itemStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
-                  labelStyle={{ display: 'none' }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="score"
-                  stroke="#06b6d4"
-                  strokeWidth={3}
-                  dot={{ fill: '#06b6d4', r: 4, strokeWidth: 0 }}
-                  activeDot={{ r: 6, stroke: 'white', strokeWidth: 2 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <h2 className="text-xl font-bold text-white">Productivity Trends</h2>
+          <div className={chartContainerClass}>
+            {productivityData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={productivityData}>
+                  <defs>
+                    <linearGradient id="productivityGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={CHART_COLORS.cyan} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={CHART_COLORS.cyan} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line
+                    type="natural"
+                    dataKey="score"
+                    stroke={CHART_COLORS.cyan}
+                    strokeWidth={3}
+                    dot={{ fill: CHART_COLORS.cyan, r: 4, strokeWidth: 2, stroke: 'rgba(6,182,212,0.2)' }}
+                    activeDot={{ r: 8, stroke: CHART_COLORS.cyan, strokeWidth: 3, fill: 'rgba(6,182,212,0.1)' }}
+                  />
+                  <Area type="natural" dataKey="score" stroke={CHART_COLORS.cyan} fillOpacity={1} fill="url(#productivityGradient)" />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChartState message="Start tracking your productivity to see trends" />
+            )}
           </div>
         </motion.div>
 
         {/* Goal Distribution Chart */}
         <motion.div variants={itemVariants} className="space-y-6">
-          <h2 className="text-xl font-bold text-foreground tracking-tight">Objective Distribution</h2>
-          <div className="glass rounded-2xl p-8 border border-white/5">
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart>
-                <Pie
-                  data={goalProgressData.length > 0 ? goalProgressData : [{ name: 'EMPTY', value: 1 }]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {goalProgressData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                  {goalProgressData.length === 0 && <Cell fill="rgba(255,255,255,0.05)" />}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(10,10,20,0.9)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '16px',
-                  }}
-                  itemStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
-                />
-                <Legend
-                  verticalAlign="bottom"
-                  height={36}
-                  formatter={(value) => <span className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest">{value}</span>}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+          <h2 className="text-xl font-bold text-white">Goal Distribution</h2>
+          <div className={chartContainerClass}>
+            {goalProgressData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <defs>
+                    <linearGradient id="grad0" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor={CHART_COLORS.cyan} />
+                      <stop offset="100%" stopColor={CHART_COLORS.blue} />
+                    </linearGradient>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor={CHART_COLORS.purple} />
+                      <stop offset="100%" stopColor={CHART_COLORS.pink} />
+                    </linearGradient>
+                    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor={CHART_COLORS.green} />
+                      <stop offset="100%" stopColor={CHART_COLORS.cyan} />
+                    </linearGradient>
+                  </defs>
+                  <Pie
+                    data={goalProgressData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={8}
+                    dataKey="value"
+                    stroke="rgba(255,255,255,0.1)"
+                    strokeWidth={2}
+                  >
+                    {goalProgressData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={`url(#grad${index % 3})`} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    formatter={(value) => <span className="text-xs font-semibold text-white/80">{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChartState message="Start adding goals to see your distribution" />
+            )}
           </div>
         </motion.div>
 
         {/* Habit Bar Chart */}
         <motion.div variants={itemVariants} className="space-y-6">
-          <h2 className="text-xl font-bold text-foreground tracking-tight">Protocol Consistency</h2>
-          <div className="glass rounded-2xl p-8 border border-white/5">
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={habitTrackerData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  stroke="currentColor"
-                  className="text-foreground/30"
-                  fontSize={10}
-                  fontWeight="bold"
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  stroke="currentColor"
-                  className="text-foreground/30"
-                  fontSize={10}
-                  fontWeight="bold"
-                  tick={{ fill: 'text-foreground/30' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(10,10,20,0.9)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '16px',
-                  }}
-                />
-                {habitKeys.map((key, i) => (
-                  <Bar key={key} dataKey={key} stackId="a" fill={COLORS[i % COLORS.length]} radius={[2, 2, 0, 0]} />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
+          <h2 className="text-xl font-bold text-white">Habit Consistency</h2>
+          <div className={chartContainerClass}>
+            {habitTrackerData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={habitTrackerData}>
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  {habitKeys.map((key, i) => (
+                    <Bar key={key} dataKey={key} stackId="a" fill={COLORS[i % COLORS.length]} radius={[6, 6, 0, 0]} barSize={24} />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChartState message="Start tracking habits to see your consistency" />
+            )}
           </div>
         </motion.div>
 
         {/* Expense Breakdown Chart */}
         <motion.div variants={itemVariants} className="space-y-6">
-          <h2 className="text-xl font-bold text-foreground tracking-tight">Resource Allocation</h2>
-          <div className="glass rounded-2xl p-8 border border-white/5">
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart
-                data={expenseData}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" horizontal={false} />
-                <XAxis type="number" hide />
-                <YAxis
-                  dataKey="category"
-                  type="category"
-                  stroke="currentColor"
-                  className="text-foreground/30"
-                  fontSize={10}
-                  fontWeight="bold"
-                  tick={{ fill: 'text-foreground/30' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(10,10,20,0.9)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '16px',
-                  }}
-                />
-                <Bar dataKey="amount" fill="#ec4899" radius={[0, 4, 4, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
+          <h2 className="text-xl font-bold text-white">Expense Breakdown</h2>
+          <div className={chartContainerClass}>
+            {expenseData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart
+                  data={expenseData}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                  <XAxis type="number" hide />
+                  <YAxis
+                    dataKey="category"
+                    type="category"
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="amount" fill={CHART_COLORS.pink} radius={[0, 8, 8, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChartState message="Start tracking expenses to see your breakdown" />
+            )}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Additional Charts Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Study Hours Trend */}
+        <motion.div variants={itemVariants} className="space-y-6">
+          <h2 className="text-xl font-bold text-white">Study Hours Trend</h2>
+          <div className={chartContainerClass}>
+            {studyTrendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={studyTrendData}>
+                  <defs>
+                    <linearGradient id="studyGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={CHART_COLORS.green} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={CHART_COLORS.green} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line
+                    type="natural"
+                    dataKey="hours"
+                    stroke={CHART_COLORS.green}
+                    strokeWidth={3}
+                    dot={{ fill: CHART_COLORS.green, r: 4, strokeWidth: 2, stroke: 'rgba(34,197,94,0.2)' }}
+                    activeDot={{ r: 8, stroke: CHART_COLORS.green, strokeWidth: 3, fill: 'rgba(34,197,94,0.1)' }}
+                  />
+                  <Area type="natural" dataKey="hours" stroke={CHART_COLORS.green} fillOpacity={1} fill="url(#studyGradient)" />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChartState message="Start tracking study sessions to see your trends" />
+            )}
+          </div>
+        </motion.div>
+
+        {/* Health Wellness Trend */}
+        <motion.div variants={itemVariants} className="space-y-6">
+          <h2 className="text-xl font-bold text-white">Health Wellness Trend</h2>
+          <div className={chartContainerClass}>
+            {healthTrendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={healthTrendData}>
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="natural" dataKey="sleep" stroke={CHART_COLORS.purple} strokeWidth={3} name="Sleep (hrs)" dot={{ fill: CHART_COLORS.purple, r: 4, strokeWidth: 2, stroke: 'rgba(139,92,246,0.2)' }} activeDot={{ r: 8, stroke: CHART_COLORS.purple, strokeWidth: 3, fill: 'rgba(139,92,246,0.1)' }} />
+                  <Line type="natural" dataKey="water" stroke={CHART_COLORS.cyan} strokeWidth={3} name="Water (L)" dot={{ fill: CHART_COLORS.cyan, r: 4, strokeWidth: 2, stroke: 'rgba(6,182,212,0.2)' }} activeDot={{ r: 8, stroke: CHART_COLORS.cyan, strokeWidth: 3, fill: 'rgba(6,182,212,0.1)' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChartState message="Start tracking health metrics to see your wellness trends" />
+            )}
+          </div>
+        </motion.div>
+
+        {/* Career Progress Overview */}
+        <motion.div variants={itemVariants} className="space-y-6">
+          <h2 className="text-xl font-bold text-white">Career Progress Overview</h2>
+          <div className={chartContainerClass}>
+            {careerProgressData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={careerProgressData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                  <XAxis type="number" hide />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="progress" fill={CHART_COLORS.orange} radius={[0, 8, 8, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChartState message="Start tracking career goals to see your progress" />
+            )}
+          </div>
+        </motion.div>
+
+        {/* Skill Completion Chart */}
+        <motion.div variants={itemVariants} className="space-y-6">
+          <h2 className="text-xl font-bold text-white">Skill Completion</h2>
+          <div className={chartContainerClass}>
+            {skillCompletionData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={skillCompletionData} margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    stroke="rgba(255,255,255,0.3)"
+                    className="text-xs"
+                    fontSize={11}
+                    fontWeight="500"
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="progress" fill={CHART_COLORS.purple} radius={[8, 8, 0, 0]} barSize={32} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChartState message="Start tracking skills to see your completion progress" />
+            )}
           </div>
         </motion.div>
       </div>
