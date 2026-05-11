@@ -48,11 +48,31 @@ export default function SettingsPage() {
         return
       }
 
-      // Fetch all user data
-      const [goalsData, healthData, expensesData] = await Promise.all([
+      // Fetch all user data from all tables
+      const [
+        goalsData,
+        healthData,
+        expensesData,
+        habitsData,
+        habitLogsData,
+        studySessionsData,
+        productivityData,
+        careerGoalsData,
+        jobApplicationsData,
+        skillRoadmapData,
+        learningProgressData
+      ] = await Promise.all([
         supabase.from('goals').select('*').eq('user_id', user.id),
         supabase.from('health_logs').select('*').eq('user_id', user.id),
-        supabase.from('expenses').select('*').eq('user_id', user.id)
+        supabase.from('expenses').select('*').eq('user_id', user.id),
+        supabase.from('habits').select('*').eq('user_id', user.id),
+        supabase.from('habit_logs').select('*').eq('user_id', user.id),
+        supabase.from('study_sessions').select('*').eq('user_id', user.id),
+        supabase.from('productivity_analytics').select('*').eq('user_id', user.id),
+        supabase.from('career_goals').select('*').eq('user_id', user.id),
+        supabase.from('job_applications').select('*').eq('user_id', user.id),
+        supabase.from('skill_roadmap').select('*').eq('user_id', user.id),
+        supabase.from('learning_progress').select('*').eq('user_id', user.id)
       ])
 
       const exportData = {
@@ -62,7 +82,15 @@ export default function SettingsPage() {
         data: {
           goals: goalsData.data || [],
           health_logs: healthData.data || [],
-          expenses: expensesData.data || []
+          expenses: expensesData.data || [],
+          habits: habitsData.data || [],
+          habit_logs: habitLogsData.data || [],
+          study_sessions: studySessionsData.data || [],
+          productivity_analytics: productivityData.data || [],
+          career_goals: careerGoalsData.data || [],
+          job_applications: jobApplicationsData.data || [],
+          skill_roadmap: skillRoadmapData.data || [],
+          learning_progress: learningProgressData.data || []
         }
       }
 
