@@ -202,12 +202,13 @@ The AI engine uses OpenAI's API to:
 
 ## Environment Variables
 
-```
-NEXT_PUBLIC_SUPABASE_URL          # Supabase project URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY     # Supabase anonymous key
-OPENAI_API_KEY                    # OpenAI API key for AI features
-```
+Create a `.env.local` file in the root directory and add:
 
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+OPENAI_API_KEY=your_openai_api_key
+```
 ## Deployment
 
 ### Deploy to Vercel
