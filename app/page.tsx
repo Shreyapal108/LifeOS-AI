@@ -154,7 +154,7 @@ export default function Home() {
             </div>
 
             {/* Card 1: System Health */}
-            <div className="absolute top-0 right-0 w-72 glass-light bg-[#0a0a0f]/60 rounded-xl border border-white/5 p-4 shadow-xl z-10 hover:-translate-y-1 transition-transform">
+            <div className="absolute top-0 right-0 w-72 glass-light bg-[#0a0a0f]/60 rounded-xl border border-white/5 p-4 shadow-none z-10 hover:-translate-y-1 transition-transform">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-md bg-green-500/10 border border-green-500/20 flex items-center justify-center">
@@ -180,7 +180,7 @@ export default function Home() {
             </div>
 
             {/* Card 2: Anomaly Engine */}
-            <div className="absolute top-32 right-20 w-72 glass-light bg-[#0a0a0f]/80 rounded-xl border border-white/5 p-4 shadow-xl z-20 hover:-translate-y-1 transition-transform">
+            <div className="absolute top-32 right-20 w-72 glass-light bg-[#0a0a0f]/80 rounded-xl border border-white/5 p-4 shadow-none z-20 hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="w-7 h-7 rounded-md bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
                   <Target className="w-3.5 h-3.5 text-blue-400" />
@@ -200,7 +200,7 @@ export default function Home() {
             </div>
 
             {/* Card 3: AI Actions */}
-            <div className="absolute top-[220px] right-4 w-72 glass-light bg-[#0a0a0f]/70 rounded-xl border border-white/5 p-4 shadow-xl z-30 hover:-translate-y-1 transition-transform">
+            <div className="absolute top-[220px] right-4 w-72 glass-light bg-[#0a0a0f]/70 rounded-xl border border-white/5 p-4 shadow-none z-30 hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-2 mb-4">
                 <Zap className="w-3.5 h-3.5 text-yellow-400" />
                 <h3 className="text-white font-bold text-[9px] uppercase tracking-widest">AI Productivity Actions</h3>
@@ -255,7 +255,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.4, delay: i * 0.05, ease: "easeOut" }}
-                className="glass-light bg-[#0a0a0f]/40 p-6 rounded-2xl border-white/5 hover:bg-[#0a0a0f]/80 transition-colors duration-300 cursor-default group"
+                className="glass-light shadow-none bg-[#0a0a0f]/40 p-6 rounded-2xl border-white/5 hover:bg-[#0a0a0f]/80 transition-colors duration-300 cursor-default group"
               >
                 <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform duration-300">
                   <feature.icon className={`w-5 h-5 ${feature.color}`} />
@@ -305,7 +305,7 @@ export default function Home() {
           >
             {/* Cleaner Insight Cards layout */}
             <div className="space-y-4 relative z-10 w-full max-w-sm mx-auto lg:ml-auto lg:mr-0">
-              <div className="glass-light bg-[#0a0a0f]/60 p-5 rounded-xl border border-white/5">
+              <div className="glass-light shadow-none bg-[#0a0a0f]/60 p-5 rounded-xl border border-white/5">
                 <div className="flex items-center gap-2 mb-2">
                   <Heart className="text-rose-400 w-4 h-4" />
                   <span className="font-bold text-rose-400 text-[10px] uppercase tracking-widest">Wellness Alert</span>
@@ -313,7 +313,7 @@ export default function Home() {
                 <p className="text-gray-400 text-xs leading-relaxed">Your sleep consistency dropped by 15% this week. This strongly correlates with your missed workouts. Consider sleeping 30m earlier tonight.</p>
               </div>
               
-              <div className="glass-light bg-[#0a0a0f]/60 p-5 rounded-xl border border-white/5 ml-4 lg:ml-8">
+              <div className="glass-light shadow-none bg-[#0a0a0f]/60 p-5 rounded-xl border border-white/5 ml-4 lg:ml-8">
                 <div className="flex items-center gap-2 mb-2">
                   <Target className="text-cyan-400 w-4 h-4" />
                   <span className="font-bold text-cyan-400 text-[10px] uppercase tracking-widest">Goal Milestone</span>
@@ -321,7 +321,7 @@ export default function Home() {
                 <p className="text-gray-400 text-xs leading-relaxed">You are 80% likely to finish your "Learn Spanish" goal by Friday based on your current velocity. Keep up the 14-day streak!</p>
               </div>
 
-              <div className="glass-light bg-[#0a0a0f]/60 p-5 rounded-xl border border-white/5">
+              <div className="glass-light shadow-none bg-[#0a0a0f]/60 p-5 rounded-xl border border-white/5">
                 <div className="flex items-center gap-2 mb-2">
                   <IndianRupee className="text-green-400 w-4 h-4" />
                   <span className="font-bold text-green-400 text-[10px] uppercase tracking-widest">Budget Optimization</span>
